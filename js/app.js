@@ -129,7 +129,7 @@
     renderPending();
     el.messages.innerHTML = "";
     el.welcome.hidden = false;
-    el.topTitle.textContent = "Nova conversa";
+    el.topTitle.textContent = "";
     showBanner("");
     renderConvs();
     closeMenu();
