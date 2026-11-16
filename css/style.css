@@ -121,12 +121,25 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); font-weight: 600; margin: 0 0 14px; }
 .welcome h2 { font-family: var(--serif); font-size: clamp(30px, 5vw, 42px); line-height: 1.12; font-weight: 500; letter-spacing: -.015em; margin: 0 0 16px; }
 .lead { font-size: 17px; color: var(--muted); margin: 0 0 32px; max-width: 560px; }
+.starters-title { font-size: 13px; font-weight: 600; color: var(--text); margin: 0 0 10px; }
 .starters { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
 .starter {
-  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
-  background: none; border: 0; border-bottom: 1px solid var(--line); padding: 16px 4px;
+  position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  background: none; border: 0; border-bottom: 1px solid var(--line); padding: 16px 36px 16px 4px;
   transition: background .15s, padding .15s;
 }
+.starter::after {
+  content: ""; position: absolute; right: 12px; top: 50%; width: 8px; height: 8px; margin-top: -5px;
+  border-right: 1.6px solid var(--muted); border-top: 1.6px solid var(--muted); transform: rotate(45deg);
+  transition: border-color .15s, right .15s;
+}
+.starter:hover::after { border-color: var(--accent); right: 8px; }
+.or-note {
+  margin-top: 28px; padding: 16px 18px; border-radius: 10px; background: var(--accent-soft);
+  font-size: 14.5px; line-height: 1.55; color: var(--text);
+}
+.or-note p { margin: 0; }
+.or-note p + p { margin-top: 2px; color: var(--muted); }
 .starter strong { font-weight: 500; font-size: 16px; }
 .starter span { font-size: 14.5px; color: var(--muted); }
 .starter:hover { background: var(--accent-soft); padding-left: 12px; }
