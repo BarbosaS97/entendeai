@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf9f6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14171d" media="(prefers-color-scheme: dark)">
+  <title>EntendAI – Direito em linguagem simples</title>
+  <meta name="description" content="Cole um texto ou envie um documento jurídico e receba uma explicação simples e clara.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Conversas">
+      <div class="brand">Entend<span>AI</span></div>
+      <button class="btn-new" id="btnNew">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+        Nova conversa
+      </button>
+      <nav class="conv-list" id="convList" aria-label="Histórico de conversas"></nav>
+      <p class="side-foot">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 016 0V9"/></svg>
+        <span>Suas conversas e documentos ficam acessíveis apenas a você.</span>
+      </p>
+    </aside>
+    <div class="backdrop" id="backdrop"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="btnMenu" aria-label="Abrir menu">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+        </button>
+        <h1 class="topbar-title" id="topTitle">Nova conversa</h1>
+      </header>
+
+      <div id="banner" class="banner" hidden role="status"></div>
+
+      <section class="chat" id="chat" aria-live="polite">
+        <div class="welcome" id="welcome">
+          <p class="eyebrow">Assistente de leitura jurídica</p>
+          <h2>Entenda seu processo, sem complicação.</h2>
+          <p class="lead">Cole um texto, escreva sua dúvida ou envie um documento. Você recebe uma explicação clara, com prazos, termos difíceis e os próximos passos.</p>
+          <ul class="starters">
+            <li><button class="starter" data-prompt="Explique este texto em linguagem simples:&#10;&#10;">
+              <strong>Explicar um texto</strong><span>Cole uma petição, contrato ou trecho de lei.</span></button></li>
+            <li><button class="starter" data-prompt="Quais são os prazos e o que preciso fazer neste documento?&#10;&#10;">
+              <strong>Prazos e providências</strong><span>Descubra o que precisa ser feito e até quando.</span></button></li>
+            <li><button class="starter" data-prompt="Recebi uma intimação. O que isso significa?&#10;&#10;">
+              <strong>Recebi uma intimação</strong><span>Entenda o aviso e o que ele exige de você.</span></button></li>
+            <li><button class="starter" data-prompt="Explique esta sentença: quem ganhou, quem perdeu e se cabe recurso.&#10;&#10;">
+              <strong>Entender uma sentença</strong><span>Resultado, consequências e possibilidade de recurso.</span></button></li>
+          </ul>
+        </div>
+        <div class="messages" id="messages"></div>
+      </section>
+
+      <footer class="composer-wrap">
+        <div class="files" id="files"></div>
+        <form class="composer" id="composer">
+          <input type="file" id="fileInput" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.txt,.md">
+          <button type="button" class="icon-btn" id="btnAttach" aria-label="Anexar arquivo" title="Anexar arquivo (PDF, imagem, Word, texto)">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 9.5l-6.4 6.4a4 4 0 01-5.7-5.7l7-7a2.7 2.7 0 013.8 3.8l-7 7a1.3 1.3 0 01-1.9-1.9l6.3-6.3"/></svg>
+          </button>
+          <textarea id="input" rows="1" placeholder="Escreva, cole um texto ou arraste um arquivo" aria-label="Mensagem"></textarea>
+          <button type="submit" class="send" id="btnSend" aria-label="Enviar">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M5 9l5-5 5 5"/></svg>
+          </button>
+        </form>
+        <p class="disclaimer">O EntendAI oferece explicações informativas e não substitui orientação de advogado(a). Em caso de prazo ou decisão importante, procure seu advogado ou a Defensoria Pública.</p>
+      </footer>
+    </main>
+  </div>
+
+  <div class="dropzone" id="dropzone" hidden><div>Solte o arquivo para anexar</div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
