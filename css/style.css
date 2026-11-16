@@ -851,3 +851,16 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .bloco-codigo { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
   .codigo-btn { min-height: 50px; justify-content: center; }
 }
+
+/* Botão Ouvir: preparando o áudio */
+.msg-actions .link-btn.carregando svg { animation: pisca-ico 1s ease-in-out infinite; }
+@keyframes pisca-ico { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .msg-actions .link-btn.carregando svg { animation: none; } }
+
+/* Botão "Baixar voz mais natural" na barra lateral */
+.side-voz { display: flex; align-items: center; gap: 8px; width: 100%; margin: 8px 0 0; padding: 8px 12px; background: none; border: 0; border-radius: 8px; font-size: 13px; color: var(--muted); text-align: left; }
+.side-voz[hidden] { display: none; }
+.side-voz svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.side-voz:hover { color: var(--accent); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.voz-progresso { margin: 4px 0 6px; }
+.voz-progresso .leitura-etapa { min-height: 0; margin: 8px 0 0; font-size: 14px; }

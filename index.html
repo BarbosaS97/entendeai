@@ -28,6 +28,10 @@
         Acessar conversa com código
       </button>
       <nav class="conv-list" id="convList" aria-label="Histórico de conversas"></nav>
+      <button class="side-voz" id="btnVozMelhor" type="button" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3.5v-11L6 8H3z"/><path d="M13 7.5a3.5 3.5 0 010 5M15.5 5a7 7 0 010 10"/></svg>
+        Baixar voz mais natural
+      </button>
       <div class="contato-card">
         <strong>Precisa falar com uma pessoa?</strong>
         <span class="contato-sub">Atendimento da Justiça Federal no DF</span>
@@ -154,6 +158,7 @@
         <li>Evite enviar senhas, dados de cartão ou documentos que não sejam do seu processo.</li>
         <li>O EntendAI explica em linguagem simples, mas não substitui advogado(a).</li>
         <li>Se usar o microfone, o navegador pode enviar o áudio ao fabricante para transformar sua voz em texto.</li>
+        <li>A leitura em voz alta acontece no seu aparelho: o texto da explicação não é enviado a nenhum serviço de voz.</li>
       </ul>
       <div class="modal-actions">
         <button type="button" class="btn btn-primary btn-block" id="btnPrivOk">Entendi, continuar</button>
@@ -212,6 +217,23 @@
       <p class="leitura-dica">Não feche esta página. Logo em seguida a explicação começa a aparecer.</p>
     </div>
   </div>
+
+  <dialog class="modal" id="dlgVozMelhor" aria-labelledby="dlgVozTitulo">
+    <div class="modal-body">
+      <h2 id="dlgVozTitulo">Voz mais natural</h2>
+      <p class="modal-text">Para ouvir as explicações com uma voz bem mais natural, o site baixa um arquivo de voz <strong>uma única vez</strong> (cerca de 63 MB). Ele fica guardado no seu aparelho, funciona sem internet e é de graça. Se puder, use o Wi-Fi.</p>
+      <div class="voz-progresso" id="vozProgresso" hidden>
+        <div class="leitura-barra"><i id="vozBarra"></i></div>
+        <p class="leitura-etapa" id="vozEtapa" aria-live="polite">Baixando a voz...</p>
+      </div>
+      <p class="form-error" id="vozErro" role="alert" hidden></p>
+      <label class="check dicas-check" id="vozNunca"><input type="checkbox" id="chkVozNunca"><span>Não perguntar de novo</span></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnVozNao">Agora não</button>
+        <button type="button" class="btn btn-primary" id="btnVozBaixar">Baixar a voz</button>
+      </div>
+    </div>
+  </dialog>
 
   <div class="dropzone" id="dropzone" hidden><div>Solte o arquivo para anexar</div></div>
 

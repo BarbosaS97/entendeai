@@ -1,0 +1,18 @@
+Componentes de terceiros usados na "voz local" do EntendAI (leitura em voz alta no próprio aparelho)
+
+1) piper-tts-web 1.0.5 (arquivos piper-tts-web.js e piper-o91UDS6e.js)
+   Licença MIT. https://github.com/Mintplex-Labs/piper-tts-web
+   Fork de @diffusion-studio/vits-web. Alterações neste projeto: o import do runtime ONNX aponta para o arquivo
+   local ort.wasm.min.js e o armazenamento do modelo usa Cache Storage (em vez de OPFS).
+
+2) onnxruntime-web 1.18.0 (arquivo ort.wasm.min.js)
+   Licença MIT. Copyright (c) Microsoft Corporation. https://github.com/microsoft/onnxruntime
+
+3) Piper (Rhasspy / Open Home Foundation) - motor de síntese de voz e fonemizador
+   Licença MIT. https://github.com/rhasspy/piper
+
+4) Voz pt_BR-faber-medium (baixada uma vez, de huggingface.co, e guardada no aparelho)
+   Base de dados: CC0 (domínio público) - https://github.com/OHF-Voice/voice-datasets
+   Modelo ajustado a partir da voz base hifi_tts_92 (Hi-Fi TTS, licença CC BY 4.0).
+
+O texto das explicações NÃO é enviado a nenhum serviço de voz: a síntese acontece localmente no navegador.

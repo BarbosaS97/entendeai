@@ -43,36 +43,215 @@
   aplicarNivel();
 
   // =====================================================================
-  // 2) Ouvir a resposta (leitura em voz alta pelo navegador)
+  // 2) Ouvir a resposta: voz neural LOCAL (Piper, grátis, roda no aparelho) com reserva na voz do navegador
   // =====================================================================
-  const temVoz = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  const temVozNavegador = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   let leitura = { id: 0, btn: null };
+  const player = new Audio();        // um único player: no iPhone ele é "destravado" no primeiro toque
+  const SILENCIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-  function resetarBotaoOuvir(btn) {
+  // estado do botão: "ouvir" | "carregando" | "parar"
+  function estadoBotao(btn, estado) {
     if (!btn) return;
-    btn.classList.remove("ativo");
-    btn.innerHTML = `${I.ouvir}<span>Ouvir</span>`;
+    btn.classList.toggle("ativo", estado !== "ouvir");
+    btn.classList.toggle("carregando", estado === "carregando");
+    btn.setAttribute("aria-busy", estado === "carregando" ? "true" : "false");
+    btn.innerHTML = estado === "ouvir"
+      ? `${I.ouvir}<span>Ouvir</span>`
+      : `${I.parar}<span>${estado === "carregando" ? "Preparando..." : "Parar"}</span>`;
   }
   function pararLeitura() {
-    if (!temVoz) return;
-    leitura.id++;                       // invalida callbacks da leitura anterior
-    speechSynthesis.cancel();
-    resetarBotaoOuvir(leitura.btn);
+    leitura.id++;                      // invalida o que ainda estiver em andamento
+    try { player.pause(); } catch {}
+    if (temVozNavegador) speechSynthesis.cancel();
+    estadoBotao(leitura.btn, "ouvir");
     leitura.btn = null;
   }
-  // Divide em trechos curtos (alguns navegadores cortam falas longas)
-  function dividirTexto(texto, max = 220) {
-    const frases = texto.replace(/\s+/g, " ").match(/[^.!?:;]+[.!?:;]*\s*/g) || [texto];
+  // Divide em trechos curtos por frase. O primeiro é menor, para a voz começar mais rápido.
+  function dividirTexto(texto, max = 220, primeiro = max) {
+    let frases = texto.replace(/\s+/g, " ").match(/[^.!?:;]+[.!?:;]*\s*/g) || [texto];
+    frases = frases.flatMap((f) => (f.length > 400 ? f.match(/[^,;]+[,;]?\s*/g) || [f] : [f]));
     const partes = [];
     let atual = "";
     for (const f of frases) {
-      if ((atual + f).length > max && atual) { partes.push(atual.trim()); atual = ""; }
+      const limite = partes.length === 0 ? primeiro : max;
+      if ((atual + f).length > limite && atual) { partes.push(atual.trim()); atual = ""; }
       atual += f;
     }
     if (atual.trim()) partes.push(atual.trim());
     return partes;
   }
-  // ----- escolha da voz: sempre português do Brasil -----
+  // Deixa o texto mais fácil de pronunciar em português (abreviações e símbolos comuns em documentos)
+  function prepararFala(t) {
+    return t
+      .replace(/\bnº\s*/gi, "número ")
+      .replace(/\barts\.\s*/gi, "artigos ")
+      .replace(/\bart\.\s*/gi, "artigo ")
+      .replace(/§§\s*/g, "parágrafos ")
+      .replace(/§\s*/g, "parágrafo ")
+      .replace(/R\$\s*([\d.]+(?:,\d+)?)/g, "$1 reais")
+      .replace(/(\d)\s*%/g, "$1 por cento")
+      .replace(/\s+/g, " ");
+  }
+  function tocar(blob) {
+    return new Promise((ok, falha) => {
+      const url = URL.createObjectURL(blob);
+      const limpar = () => { URL.revokeObjectURL(url); player.onended = null; player.onerror = null; };
+      player.onended = () => { limpar(); ok(); };
+      player.onerror = () => { limpar(); falha(new Error("audio")); };
+      player.src = url;
+      player.play().catch((e) => { limpar(); falha(e); });
+    });
+  }
+
+  // ----- voz local (Piper): o modelo (~63 MB) é baixado UMA vez e fica guardado no aparelho -----
+  const VOZ_MB = 63;
+  const vozLocal = { worker: null, pend: new Map(), seq: 0, instalada: null, suporta: null };
+  const suportaVozLocal = () => {
+    if (vozLocal.suporta === null) {
+      vozLocal.suporta = !!(window.Worker && window.WebAssembly && window.caches && window.isSecureContext);
+    }
+    return vozLocal.suporta;
+  };
+  function encerrarWorker(motivo) {
+    if (vozLocal.worker) { try { vozLocal.worker.terminate(); } catch {} }
+    vozLocal.worker = null;
+    for (const [, p] of vozLocal.pend) p.falha(new Error(motivo || "worker"));
+    vozLocal.pend.clear();
+  }
+  function chamarWorker(msg, aoProgresso) {
+    return new Promise((ok, falha) => {
+      if (!vozLocal.worker) {
+        try {
+          vozLocal.worker = new Worker(new URL("vendor/piper/voz-worker.js", document.baseURI), { type: "module" });
+        } catch (e) { return falha(e); }
+        vozLocal.worker.onmessage = (ev) => {
+          const r = ev.data, p = vozLocal.pend.get(r.id);
+          if (!p) return;
+          if (r.progresso !== undefined) { if (p.aoProgresso) p.aoProgresso(r.progresso); return; }
+          vozLocal.pend.delete(r.id);
+          if (r.ok) p.ok(r); else p.falha(new Error(r.erro || "voz"));
+        };
+        vozLocal.worker.onerror = () => encerrarWorker("worker");
+      }
+      const id = ++vozLocal.seq;
+      vozLocal.pend.set(id, { ok, falha, aoProgresso });
+      vozLocal.worker.postMessage({ id, ...msg });
+    });
+  }
+  // true se o modelo já está guardado neste aparelho
+  async function vozLocalInstalada() {
+    if (!suportaVozLocal()) return false;
+    if (vozLocal.instalada === null) {
+      try { vozLocal.instalada = !!(await chamarWorker({ tipo: "estado" })).instalada; }
+      catch { vozLocal.suporta = false; return false; }
+    }
+    return vozLocal.instalada;
+  }
+
+  // ----- janela "Voz mais natural" (pede permissão antes de baixar 63 MB) -----
+  const dlgVoz = $("dlgVozMelhor");
+  const LEMBRETE_DIAS = 14;
+  function devePerguntar() {
+    const r = ler("vozMelhorRecusa");
+    if (!r) return true;
+    if (r === "nunca") return false;
+    return Date.now() - Number(r) > LEMBRETE_DIAS * 86400000;
+  }
+  // Resolve "instalada" ou "recusada"
+  function oferecerVozLocal() {
+    if (!dlgVoz) return Promise.resolve("recusada");
+    return new Promise((resolve) => {
+      const q = (id) => $(id);
+      let baixando = false, resolvido = false;
+      const fim = (r) => { if (resolvido) return; resolvido = true; if (dlgVoz.open) dlgVoz.close(); resolve(r); };
+      const restaurar = () => {
+        baixando = false;
+        q("vozProgresso").hidden = true; q("vozNunca").hidden = false;
+        q("btnVozBaixar").disabled = false; q("btnVozNao").textContent = "Agora não";
+      };
+      q("vozErro").hidden = true; restaurar();
+      q("chkVozNunca").checked = false;
+      q("vozBarra").style.width = "0%";
+
+      q("btnVozNao").onclick = () => {
+        if (baixando) {                                // cancelar o download em andamento
+          encerrarWorker("cancelado"); restaurar();
+          q("vozEtapa").textContent = "Baixando a voz...";
+          return;
+        }
+        guardar("vozMelhorRecusa", q("chkVozNunca").checked ? "nunca" : String(Date.now()));
+        fim("recusada");
+      };
+      dlgVoz.addEventListener("cancel", (e) => { e.preventDefault(); q("btnVozNao").click(); }, { once: true });
+
+      q("btnVozBaixar").onclick = async () => {
+        try { player.src = SILENCIO; player.play().catch(() => {}); } catch {}   // destrava o áudio (iPhone) dentro do toque
+        baixando = true;
+        q("vozErro").hidden = true;
+        q("vozProgresso").hidden = false; q("vozNunca").hidden = true;
+        q("btnVozBaixar").disabled = true; q("btnVozNao").textContent = "Cancelar";
+        q("vozEtapa").textContent = "Baixando a voz... não feche esta página.";
+        try {
+          await chamarWorker({ tipo: "baixar" }, (p) => {
+            q("vozBarra").style.width = Math.round(p * 100) + "%";
+            q("vozEtapa").textContent = `Baixando a voz... ${Math.round(p * 100)}%`;
+          });
+          vozLocal.instalada = true;
+          atualizarBotaoVoz();
+          fim("instalada");
+        } catch (e) {
+          if (!baixando) return;                       // foi cancelado pela pessoa
+          restaurar();
+          q("vozErro").textContent = "Não consegui baixar a voz. Verifique sua internet e tente de novo.";
+          q("vozErro").hidden = false;
+        }
+      };
+      dlgVoz.showModal();
+    });
+  }
+
+  // Botão "Voz mais natural" na barra lateral (para preparar com calma, no Wi-Fi)
+  const btnVozMenu = $("btnVozMelhor");
+  function atualizarBotaoVoz() {
+    if (!btnVozMenu) return;
+    btnVozMenu.hidden = !(suportaVozLocal() && vozLocal.instalada === false);
+  }
+  if (btnVozMenu) {
+    btnVozMenu.onclick = async () => {
+      const r = await oferecerVozLocal();
+      if (r === "instalada") showBanner("Pronto! A voz mais natural foi instalada. Toque em Ouvir em qualquer explicação.", false);
+    };
+    if (suportaVozLocal()) vozLocalInstalada().then(atualizarBotaoVoz);
+  }
+
+  // Lê com a voz local: sintetiza um trecho enquanto o anterior toca (sem pausas)
+  async function falarLocal(partes, meuId, btn) {
+    await chamarWorker({ tipo: "preparar" });          // 1ª vez: alguns segundos para carregar o modelo
+    if (leitura.id !== meuId) return;
+    const pedidos = [];
+    const pedir = (i) => {
+      if (i < partes.length && !pedidos[i]) {
+        pedidos[i] = chamarWorker({ tipo: "falar", texto: partes[i] }).then((r) => new Blob([r.wav], { type: "audio/wav" }));
+        pedidos[i].catch(() => {});
+      }
+    };
+    pedir(0);
+    for (let i = 0; i < partes.length; i++) {
+      try {
+        const blob = await pedidos[i];
+        if (leitura.id !== meuId) return;
+        pedir(i + 1);                                  // já sintetiza o próximo enquanto este toca
+        if (i === 0) estadoBotao(btn, "parar");
+        await tocar(blob);
+      } catch (e) { e.indice = i; throw e; }
+      if (leitura.id !== meuId) return;
+    }
+    estadoBotao(btn, "ouvir");
+    leitura.btn = null;
+  }
+
+  // ----- voz do navegador (reserva): sempre português do Brasil -----
   // O navegador carrega a lista de vozes de forma assíncrona; espera um pouco se ela ainda estiver vazia.
   function carregarVozes() {
     return new Promise((ok) => {
@@ -102,35 +281,22 @@
       semVozPtBR: todas.length > 0 && ptbr.length === 0,
     };
   }
-  // Deixa o texto mais fácil de pronunciar em português (abreviações e símbolos comuns em documentos)
-  function prepararFala(t) {
-    return t
-      .replace(/\bnº\s*/gi, "número ")
-      .replace(/\barts\.\s*/gi, "artigos ")
-      .replace(/\bart\.\s*/gi, "artigo ")
-      .replace(/§§\s*/g, "parágrafos ")
-      .replace(/§\s*/g, "parágrafo ")
-      .replace(/R\$\s*([\d.]+(?:,\d+)?)/g, "$1 reais")
-      .replace(/(\d)\s*%/g, "$1 por cento")
-      .replace(/\s+/g, " ");
-  }
-
-  async function falar(texto, btn) {
-    if (leitura.btn === btn) { pararLeitura(); return; }   // segundo toque = parar
-    pararLeitura();
-    const meuId = ++leitura.id;
-    leitura.btn = btn;
-    btn.classList.add("ativo");
-    btn.innerHTML = `${I.parar}<span>Parar</span>`;
+  async function falarNavegador(textoLimpo, meuId, btn) {
+    if (!temVozNavegador) {
+      estadoBotao(btn, "ouvir"); leitura.btn = null;
+      showBanner("Não foi possível ler em voz alta neste aparelho.");
+      return;
+    }
     const { voz, semVozPtBR } = await escolherVoz();
     if (leitura.id !== meuId) return;                       // a pessoa parou ou trocou de leitura enquanto carregava
     if (semVozPtBR) {
-      resetarBotaoOuvir(btn); leitura.btn = null;
-      showBanner("Este aparelho não tem uma voz em português do Brasil instalada. Instale uma nas configurações de idioma e voz do sistema para ouvir a explicação.");
+      estadoBotao(btn, "ouvir"); leitura.btn = null;
+      showBanner("Este aparelho não tem uma voz em português do Brasil instalada. Toque em \"Voz mais natural\" no menu para baixar uma, ou instale uma nas configurações do sistema.");
       return;
     }
-    const partes = dividirTexto(prepararFala(texto));
-    const fim = () => { if (leitura.id === meuId) { resetarBotaoOuvir(btn); leitura.btn = null; } };
+    estadoBotao(btn, "parar");
+    const partes = dividirTexto(textoLimpo, 220);
+    const fim = () => { if (leitura.id === meuId) { estadoBotao(btn, "ouvir"); leitura.btn = null; } };
     partes.forEach((p, i) => {
       const u = new SpeechSynthesisUtterance(p);
       u.lang = "pt-BR";
@@ -140,6 +306,42 @@
       if (i === partes.length - 1) u.onend = fim;
       speechSynthesis.speak(u);
     });
+  }
+
+  async function falar(texto, btn) {
+    if (leitura.btn === btn) { pararLeitura(); return; }   // segundo toque = parar
+    pararLeitura();
+    const meuId = ++leitura.id;
+    leitura.btn = btn;
+    estadoBotao(btn, "carregando");
+    // "Destrava" o player (iPhone/Safari exigem que isso aconteça dentro do toque)
+    try { player.src = SILENCIO; player.play().catch(() => {}); } catch {}
+    const limpo = prepararFala(texto);
+
+    // 1) voz local, se já estiver instalada; ou oferece instalar (uma vez, com permissão)
+    let usarLocal = await vozLocalInstalada();
+    if (leitura.id !== meuId) return;
+    if (!usarLocal && suportaVozLocal() && devePerguntar()) {
+      const r = await oferecerVozLocal();
+      if (leitura.id !== meuId) return;
+      usarLocal = r === "instalada";
+      if (usarLocal) estadoBotao(btn, "carregando");
+    }
+    if (usarLocal) {
+      const partes = dividirTexto(limpo, 300, 140);
+      try {
+        await falarLocal(partes, meuId, btn);
+        return;
+      } catch (e) {
+        if (leitura.id !== meuId) return;
+        encerrarWorker("falha");                           // recomeça limpo na próxima vez
+        // continua com a voz do navegador, a partir do trecho em que a voz local falhou
+        await falarNavegador(partes.slice(e.indice || 0).join(" "), meuId, btn);
+        return;
+      }
+    }
+    // 2) voz do navegador
+    await falarNavegador(limpo, meuId, btn);
   }
   // Para a leitura ao trocar de conversa ou sair da página
   document.addEventListener("entend:conversa", pararLeitura);
@@ -416,7 +618,7 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
       return b;
     };
     const bolha = wrap.querySelector(".bubble");
-    if (temVoz) botao("Ouvir", I.ouvir, (b) => falar(bolha.innerText, b), "btn-ouvir");
+    botao("Ouvir", I.ouvir, (b) => falar(bolha.innerText, b), "btn-ouvir");
     const copiar = App.copyButton(() => texto).firstChild;   // reaproveita o botão Copiar
     acoes.appendChild(copiar);
     botao("Imprimir", I.imprimir, () => imprimir(wrap));
