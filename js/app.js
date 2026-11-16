@@ -24,7 +24,12 @@
   const MAX_OCR_PAGES = 12;
   // "publico" (padrão) ou "atendente" (definido no <body data-modo="atendente">)
   const MODO = document.body.dataset.modo || "publico";
-  const PLACEHOLDER = el.input.placeholder;
+  // Texto do campo: versão curta no celular, para não ser cortado
+  const mqCelular = window.matchMedia("(max-width: 800px)");
+  const PH_DESKTOP = el.input.placeholder, PH_CELULAR = "Digite ou anexe um documento";
+  const PLACEHOLDER_ATUAL = () => (mqCelular.matches ? PH_CELULAR : PH_DESKTOP);
+  el.input.placeholder = PLACEHOLDER_ATUAL();
+  mqCelular.addEventListener("change", () => { if (!state.readonly) el.input.placeholder = PLACEHOLDER_ATUAL(); });
   const state = { user: null, convs: [], currentId: null, pending: [], busy: false, readonly: false };
 
   // Chama uma Edge Function com a sessão atual
@@ -51,7 +56,7 @@
     state.readonly = b;
     el.input.disabled = b;
     el.btnAttach.disabled = b;
-    el.input.placeholder = b ? "Esta conversa é somente leitura" : PLACEHOLDER;
+    el.input.placeholder = b ? "Conversa somente leitura" : PLACEHOLDER_ATUAL();
     el.btnSend.disabled = state.busy || b;
   }
 

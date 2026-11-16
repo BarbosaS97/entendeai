@@ -495,3 +495,57 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .starters .starter::after { border-color: var(--t-fg); opacity: .7; }
 .starters .starter:hover { background: var(--t-hv); border-color: var(--t-fg); }
 .starters .starter:hover::after { opacity: 1; }
+
+/* ---------- Celular: topo com logo, tela inicial compacta e rodapé de digitação ---------- */
+.top-logo, .d-short { display: none; }
+
+@media (max-width: 800px) {
+  /* Topo: botão de menu + mini-logo (some quando há título da conversa) */
+  .topbar { gap: 6px; }
+  .top-logo { display: block; height: 36px; width: auto; }
+  .topbar-title:not(:empty) + .top-logo { display: none; }
+  .topbar-title { flex: 1; min-width: 0; }
+  .topbar-title:empty { flex: 0; }
+  .topbar-actions { margin-left: auto; }
+
+  /* Tela inicial: logo menor e cartões em grade 2x2 */
+  .chat { padding: 16px 14px 12px; }
+  .welcome { margin-top: 0; }
+  .welcome-logo { margin-bottom: 14px; }
+  .welcome-logo .logo-banner { width: min(190px, 60%); }
+  .welcome h2 { font-size: 26px; line-height: 1.15; }
+  .welcome .lead { font-size: 14.5px; margin-bottom: 16px; }
+  .starters { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .starter { padding: 12px 12px; }
+  .starter::after { display: none; }
+  .starter strong { font-size: 14px; line-height: 1.25; }
+  .starter span { font-size: 12px; }
+  .code-cta { margin-top: 10px; padding: 11px 12px; font-size: 13px; line-height: 1.4; }
+
+  /* Rodapé fixo na base: separado do conteúdo, com área segura do aparelho */
+  .composer-wrap {
+    padding: 10px 12px calc(8px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 20px rgba(15, 26, 51, .06);
+    position: relative; z-index: 5;
+  }
+  .files { margin-bottom: 8px; }
+  .composer {
+    gap: 2px; padding: 5px 5px 5px 4px; min-height: 52px; align-items: flex-end;
+    background: var(--side); border: 1px solid var(--line); border-radius: 16px;
+  }
+  .composer:focus-within { background: var(--panel); }
+  .composer textarea { padding: 10px 6px; font-size: 16px; max-height: 140px; }
+  .composer .icon-btn { width: 42px; height: 42px; padding: 0; align-items: center; justify-content: center; }
+  .send { width: 42px; height: 42px; border-radius: 12px; }
+
+  /* Aviso curto de uma linha */
+  .disclaimer { margin-top: 7px; font-size: 11px; line-height: 1.3; }
+  .d-full { display: none; }
+  .d-short { display: inline; }
+}
+@media (max-width: 380px) {
+  .disclaimer { display: block; }
+  .welcome h2 { font-size: 24px; }
+}
