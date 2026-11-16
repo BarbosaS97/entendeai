@@ -415,3 +415,40 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   .code-display span { width: 48px; height: 60px; font-size: 34px; }
   .btn-danger { margin-right: 0; }
 }
+
+/* ---------- Tela inicial compacta ---------- */
+.welcome { max-width: 640px; margin-top: 3vh; }
+.welcome .eyebrow { margin-bottom: 10px; }
+.welcome h2 { font-size: clamp(26px, 4.2vw, 34px); margin-bottom: 10px; }
+.welcome .lead { font-size: 15.5px; line-height: 1.55; margin-bottom: 22px; max-width: 540px; }
+.starters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 0; }
+.starter {
+  height: 100%; padding: 14px 32px 14px 16px; gap: 2px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+}
+.starter strong { font-size: 15px; }
+.starter span { font-size: 13px; line-height: 1.4; }
+.starter:hover { background: var(--accent-soft); padding-left: 16px; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.starter::after { right: 14px; width: 7px; height: 7px; margin-top: -4px; }
+.starter:hover::after { right: 11px; }
+.code-cta {
+  display: block; width: 100%; margin-top: 14px; text-align: left;
+  background: none; border: 1px dashed var(--line); border-radius: 10px; padding: 12px 16px;
+  font-size: 14px; color: var(--muted); transition: border-color .15s, color .15s, background .15s;
+}
+.code-cta strong { color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.code-cta:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+@media (max-width: 560px) {
+  .starters { grid-template-columns: 1fr; gap: 8px; }
+  .starter { padding: 12px 30px 12px 14px; }
+}
+
+/* Botão "Acessar conversa com código" em destaque na barra lateral */
+.side-link {
+  margin-top: 8px; padding: 10px 12px; border-radius: 10px; font-weight: 500; font-size: 14px;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  transition: background .15s, border-color .15s;
+}
+.side-link svg { width: 18px; height: 18px; stroke-width: 1.8; }
+.side-link:hover { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }

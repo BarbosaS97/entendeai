@@ -10,11 +10,14 @@
 
   function mostrarErro(msg) { erro.textContent = msg; erro.hidden = !msg; }
 
-  $("btnCodigo").onclick = () => {
+  const abrir = () => {
     input.value = ""; ok.disabled = true; mostrarErro("");
     dlg.showModal();
     input.focus();
   };
+  // Botão da barra lateral e atalho na tela inicial
+  $("btnCodigo").onclick = abrir;
+  $("btnCodigoWelcome").onclick = abrir;
   $("btnCodigoCancelar").onclick = () => dlg.close();
   // Clique fora da caixa fecha
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
