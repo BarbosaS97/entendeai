@@ -21,7 +21,38 @@
 
   const MAX_BYTES = MAX_FILE_MB * 1024 * 1024;
   const MAX_OCR_PAGES = 12;
-  const state = { user: null, convs: [], currentId: null, pending: [], busy: false };
+  // "publico" (padrão) ou "atendente" (definido no <body data-modo="atendente">)
+  const MODO = document.body.dataset.modo || "publico";
+  const PLACEHOLDER = el.input.placeholder;
+  const state = { user: null, convs: [], currentId: null, pending: [], busy: false, readonly: false };
+
+  // Chama uma Edge Function com a sessão atual
+  async function callFn(nome, corpo) {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${nome}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_KEY },
+      body: JSON.stringify(corpo),
+    });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  // Define a conversa aberta e avisa quem precisar saber (ex.: botão "Compartilhar conversa")
+  function setCurrent(id) {
+    state.currentId = id;
+    document.dispatchEvent(new CustomEvent("entend:conversa", { detail: { id } }));
+  }
+
+  // Conversa compartilhada sem permissão de escrita: composer bloqueado
+  function setReadonly(b) {
+    state.readonly = b;
+    el.input.disabled = b;
+    el.btnAttach.disabled = b;
+    el.input.placeholder = b ? "Esta conversa é somente leitura" : PLACEHOLDER;
+    el.btnSend.disabled = state.busy || b;
+  }
 
   // ---------- util ----------
   const ext = (n) => (n.split(".").pop() || "").toLowerCase();
@@ -38,7 +69,7 @@
     el.input.style.height = "auto";
     el.input.style.height = Math.min(el.input.scrollHeight, 220) + "px";
   }
-  function setBusy(b) { state.busy = b; el.btnSend.disabled = b; }
+  function setBusy(b) { state.busy = b; el.btnSend.disabled = b || state.readonly; }
 
   function copyButton(getText) {
     const wrap = document.createElement("div");
@@ -92,7 +123,15 @@
 
   // ---------- conversas ----------
   async function loadConvs() {
-    const { data, error } = await sb.from("conversations").select("id,title,updated_at").order("updated_at", { ascending: false });
+    let q = sb.from("conversations").select("id,title,updated_at,user_id,origem").order("updated_at", { ascending: false });
+    if (MODO === "atendente") {
+      // Área do atendente: só as conversas que ele mesmo criou nesse modo
+      q = q.eq("origem", "atendente").eq("user_id", state.user.id);
+    } else {
+      // Chat público: não mostra conversas de atendente criadas nesta sessão, mas mostra as compartilhadas
+      q = q.or(`origem.eq.publico,user_id.neq.${state.user.id}`);
+    }
+    const { data, error } = await q;
     if (error) { showBanner("Erro ao carregar conversas: " + error.message); return; }
     state.convs = data;
     renderConvs();
@@ -116,7 +155,7 @@
       const row = document.createElement("div");
       row.className = "conv" + (c.id === state.currentId ? " active" : "");
       row.tabIndex = 0;
-      row.innerHTML = `<span class="body"><span class="t">${esc(c.title)}</span><span class="m">${esc(metaLabel(c.updated_at))}</span></span><button class="del" title="Excluir" aria-label="Excluir conversa">${ICON.trash}</button>`;
+      row.innerHTML = `<span class="body"><span class="t">${esc(c.title)}</span><span class="m">${c.user_id !== state.user.id ? "Compartilhada · " : ""}${esc(metaLabel(c.updated_at))}</span></span><button class="del" title="Excluir" aria-label="Excluir conversa">${ICON.trash}</button>`;
       row.onclick = () => openConv(c.id);
       row.onkeydown = (e) => { if (e.key === "Enter" && e.target === row) openConv(c.id); };
       row.querySelector(".del").onclick = (e) => { e.stopPropagation(); deleteConv(c.id); };
@@ -124,7 +163,8 @@
     }
   }
   function newConv() {
-    state.currentId = null;
+    setCurrent(null);
+    setReadonly(false);
     state.pending = [];
     renderPending();
     el.messages.innerHTML = "";
@@ -136,7 +176,7 @@
     el.input.focus();
   }
   async function openConv(id) {
-    state.currentId = id;
+    setCurrent(id);
     closeMenu();
     const conv = state.convs.find((c) => c.id === id);
     el.topTitle.textContent = conv ? conv.title : "Conversa";
@@ -147,11 +187,28 @@
     el.welcome.hidden = true;
     for (const m of data) addMessage(m.role, m.content, m.attachments);
     scrollDown();
+    // Conversa de outra pessoa (compartilhada): confere se pode escrever
+    if (conv && conv.user_id !== state.user.id) {
+      const { data: pode } = await sb.rpc("pode_escrever_conversa", { p_conversa: id });
+      setReadonly(pode !== true);
+    } else {
+      setReadonly(false);
+    }
   }
   async function deleteConv(id) {
-    if (!confirm("Excluir esta conversa? Esta ação não pode ser desfeita.")) return;
-    const { error } = await sb.from("conversations").delete().eq("id", id);
-    if (error) { showBanner("Erro ao excluir: " + error.message); return; }
+    const conv = state.convs.find((c) => c.id === id);
+    const minha = !conv || conv.user_id === state.user.id;
+    const aviso = minha
+      ? "Excluir esta conversa? Esta ação não pode ser desfeita."
+      : "Remover esta conversa do seu histórico? Ela continua existindo para quem a criou.";
+    if (!confirm(aviso)) return;
+    if (minha) {
+      const { error } = await sb.from("conversations").delete().eq("id", id);
+      if (error) { showBanner("Erro ao excluir: " + error.message); return; }
+    } else {
+      const r = await callFn("conversa-codigo", { acao: "sair", conversa_id: id });
+      if (!r.ok) { showBanner(r.data.error || "Não foi possível remover a conversa."); return; }
+    }
     state.convs = state.convs.filter((c) => c.id !== id);
     if (state.currentId === id) newConv(); else renderConvs();
   }
@@ -229,6 +286,7 @@
   }
 
   async function addFiles(fileList) {
+    if (state.readonly) return;
     for (const file of fileList) {
       if (state.pending.length >= 5) { showBanner("Máximo de 5 arquivos por mensagem."); break; }
       if (file.size > MAX_BYTES) { showBanner(`"${file.name}" passa de ${MAX_FILE_MB} MB.`); continue; }
@@ -261,7 +319,7 @@
 
   // ---------- envio ----------
   async function send() {
-    if (state.busy) return;
+    if (state.busy || state.readonly) return;
     const content = el.input.value.trim();
     if (!content && !state.pending.length) return;
     setBusy(true);
@@ -274,10 +332,13 @@
 
       if (!convId) {
         const title = cleanTitle(content || attachments[0].name);
-        const { data, error } = await sb.from("conversations").insert({ title }).select("id,title,updated_at").single();
+        // No modo atendente a origem é 'atendente'; o nome do atendente é preenchido pelo banco.
+        const { data, error } = await sb.from("conversations")
+          .insert({ title, origem: MODO === "atendente" ? "atendente" : "publico" })
+          .select("id,title,updated_at,user_id,origem").single();
         if (error) throw new Error("Não foi possível criar a conversa: " + error.message);
         convId = data.id;
-        state.currentId = convId;
+        setCurrent(convId);
         state.convs.unshift(data);
         el.topTitle.textContent = data.title;
         renderConvs();
@@ -393,10 +454,16 @@
   });
 
   // ---------- início ----------
-  (async () => {
-    try {
-      await initAuth();
-      await loadConvs();
-    } catch (e) { console.error(e); }
-  })();
+  // API usada pelos módulos extras (atendente.js e codigo.js)
+  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv };
+
+  // No modo atendente, quem inicia é o atendente.js (depois do login).
+  if (MODO !== "atendente") {
+    (async () => {
+      try {
+        await initAuth();
+        await loadConvs();
+      } catch (e) { console.error(e); }
+    })();
+  }
 })();
