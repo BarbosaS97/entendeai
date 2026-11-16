@@ -72,16 +72,64 @@
     if (atual.trim()) partes.push(atual.trim());
     return partes;
   }
-  function falar(texto, btn) {
+  // ----- escolha da voz: sempre português do Brasil -----
+  // O navegador carrega a lista de vozes de forma assíncrona; espera um pouco se ela ainda estiver vazia.
+  function carregarVozes() {
+    return new Promise((ok) => {
+      const v = speechSynthesis.getVoices();
+      if (v.length) return ok(v);
+      const fim = () => { speechSynthesis.removeEventListener("voiceschanged", fim); ok(speechSynthesis.getVoices()); };
+      speechSynthesis.addEventListener("voiceschanged", fim);
+      setTimeout(fim, 1500);
+    });
+  }
+  const ehPtBR = (v) => v.lang.replace("_", "-").toLowerCase() === "pt-br";
+  // Prefere vozes "naturais"/online e as mais conhecidas; ignora qualquer voz que não seja pt-BR
+  function pontuarVoz(v) {
+    let p = 100;
+    if (/natural|online/i.test(v.name)) p += 30;
+    if (/google/i.test(v.name)) p += 20;
+    if (/francisca|antonio|thalita|maria|luciana|felipe|brasil|brazil/i.test(v.name)) p += 10;
+    if (v.localService) p += 2;
+    return p;
+  }
+  async function escolherVoz() {
+    const todas = await carregarVozes();
+    const ptbr = todas.filter(ehPtBR).sort((a, b) => pontuarVoz(b) - pontuarVoz(a));
+    return {
+      voz: ptbr[0] || null,
+      // há vozes no aparelho, mas nenhuma em pt-BR: melhor não ler do que ler com sotaque ou idioma errado
+      semVozPtBR: todas.length > 0 && ptbr.length === 0,
+    };
+  }
+  // Deixa o texto mais fácil de pronunciar em português (abreviações e símbolos comuns em documentos)
+  function prepararFala(t) {
+    return t
+      .replace(/\bnº\s*/gi, "número ")
+      .replace(/\barts\.\s*/gi, "artigos ")
+      .replace(/\bart\.\s*/gi, "artigo ")
+      .replace(/§§\s*/g, "parágrafos ")
+      .replace(/§\s*/g, "parágrafo ")
+      .replace(/R\$\s*([\d.]+(?:,\d+)?)/g, "$1 reais")
+      .replace(/(\d)\s*%/g, "$1 por cento")
+      .replace(/\s+/g, " ");
+  }
+
+  async function falar(texto, btn) {
     if (leitura.btn === btn) { pararLeitura(); return; }   // segundo toque = parar
     pararLeitura();
     const meuId = ++leitura.id;
     leitura.btn = btn;
     btn.classList.add("ativo");
     btn.innerHTML = `${I.parar}<span>Parar</span>`;
-    const voz = speechSynthesis.getVoices().find((v) => /^pt[-_]BR/i.test(v.lang)) ||
-      speechSynthesis.getVoices().find((v) => /^pt/i.test(v.lang));
-    const partes = dividirTexto(texto);
+    const { voz, semVozPtBR } = await escolherVoz();
+    if (leitura.id !== meuId) return;                       // a pessoa parou ou trocou de leitura enquanto carregava
+    if (semVozPtBR) {
+      resetarBotaoOuvir(btn); leitura.btn = null;
+      showBanner("Este aparelho não tem uma voz em português do Brasil instalada. Instale uma nas configurações de idioma e voz do sistema para ouvir a explicação.");
+      return;
+    }
+    const partes = dividirTexto(prepararFala(texto));
     const fim = () => { if (leitura.id === meuId) { resetarBotaoOuvir(btn); leitura.btn = null; } };
     partes.forEach((p, i) => {
       const u = new SpeechSynthesisUtterance(p);
@@ -417,5 +465,5 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
     wrap.appendChild(contato);
   }
 
-  window.EntendRecursos = { decorar, garantirPrivacidade };
+  window.EntendRecursos = { decorar, garantirPrivacidade, escolherVoz, prepararFala };
 })();

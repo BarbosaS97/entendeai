@@ -60,19 +60,40 @@
           <p class="eyebrow">Assistente de leitura jurídica</p>
           <h2>Entenda seu processo, sem complicação.</h2>
           <p class="lead">Envie seu documento ou escreva sua dúvida. Eu explico em linguagem simples.</p>
-          <ol class="passos" aria-label="Como funciona">
-            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg></span><span class="passo-t"><b>1. Envie</b><small>o documento</small></span></li>
-            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span><span class="passo-t"><b>2. Leia</b><small>a explicação</small></span></li>
-            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></span><span class="passo-t"><b>3. Pergunte</b><small>o que não entendeu</small></span></li>
-          </ol>
-          <div class="acoes" role="group" aria-label="Escolha como enviar">
-            <button type="button" class="acao acao-azul" id="btnFoto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg><span class="acao-t"><strong>Tirar foto do documento</strong><small>Abre a câmera</small></span></button>
-            <button type="button" class="acao acao-verde" id="btnArquivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg><span class="acao-t"><strong>Escolher arquivo</strong><small>PDF, foto ou Word</small></span></button>
-            <button type="button" class="acao acao-indigo" id="btnDigitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"/><path d="M14.5 6.5l3 3"/></svg><span class="acao-t"><strong>Digitar ou colar texto</strong><small>Escreva sua dúvida</small></span></button>
-          </div>
-          <button type="button" class="code-cta" id="btnCodigoWelcome">
-            <span>Recebeu um código do atendente? <strong>Clique aqui para acessar a conversa</strong></span>
-          </button>
+          <section class="bloco-envio" aria-label="Como usar">
+            <ol class="passos">
+              <li>
+                <span class="passo-n" aria-hidden="true">1</span>
+                <div class="passo-corpo">
+                  <div class="passo-t"><b>Envie o documento</b><small>Foto, PDF, Word ou texto</small></div>
+                  <div class="acoes" role="group" aria-label="Escolha como enviar">
+              <button type="button" class="acao" id="btnFoto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg><span>Tirar foto</span></button>
+              <button type="button" class="acao" id="btnArquivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg><span>Escolher arquivo</span></button>
+              <button type="button" class="acao" id="btnDigitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"/><path d="M14.5 6.5l3 3"/></svg><span>Digitar ou colar</span></button>
+            </div>
+                </div>
+              </li>
+              <li>
+                <span class="passo-n" aria-hidden="true">2</span>
+                <div class="passo-corpo"><div class="passo-t"><b>Leia a explicação</b><small>Em linguagem simples</small></div></div>
+              </li>
+              <li>
+                <span class="passo-n" aria-hidden="true">3</span>
+                <div class="passo-corpo"><div class="passo-t"><b>Tire suas dúvidas</b><small>Pergunte o que quiser sobre a explicação</small></div></div>
+              </li>
+            </ol>
+          </section>
+          <div class="ou-divisor" role="separator"><span>ou</span></div>
+          <section class="bloco-codigo" aria-label="Acessar conversa com código">
+            <div class="codigo-texto">
+              <b>Recebeu um código do atendimento?</b>
+              <small>Digite os 4 números que o atendente passou para abrir a conversa preparada para você.</small>
+            </div>
+            <button type="button" class="btn btn-secondary codigo-btn" id="btnCodigoWelcome">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="5" width="14" height="10" rx="2"/><path d="M6.5 9h.01M10 9h.01M13.5 9h.01M6.5 12h7"/></svg>
+              Digitar o código
+            </button>
+          </section>
           <p class="contato-inline">Dúvidas? Fale com o atendimento:
             <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a></p>
         </div>

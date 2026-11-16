@@ -595,33 +595,6 @@ body { zoom: var(--zoom); font-size: 17px; }
 .topbar-actions { align-items: center; }
 .topbar-actions .tam-texto { margin-left: 0; }
 
-/* Passos "Como funciona" */
-.passos { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
-.passos li {
-  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
-  padding: 12px 6px 11px; background: var(--side); border: 1px solid var(--line); border-radius: 12px;
-}
-.passo-ic { width: 42px; height: 42px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; }
-.passo-ic svg { width: 24px; height: 24px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.passo-t b { display: block; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
-.passo-t small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.3; }
-
-/* Atalhos grandes para enviar o documento */
-.acoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
-.acao {
-  display: flex; align-items: center; gap: 12px; text-align: left; min-height: 66px; padding: 12px 14px;
-  background: var(--t-bg); border: 1px solid var(--t-bd); border-radius: 14px; font: inherit; color: var(--text);
-  transition: background .15s, border-color .15s, transform .1s;
-}
-.acao svg { width: 40px; height: 40px; padding: 8px; flex: none; border-radius: 50%; background: rgba(255,255,255,.75); fill: none; stroke: var(--t-fg); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.acao-t strong { display: block; font-size: 15.5px; font-weight: 600; color: var(--t-fg); line-height: 1.25; }
-.acao-t small { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
-.acao:hover { background: var(--t-hv); border-color: var(--t-fg); }
-.acao:active { transform: scale(.985); }
-.acao-azul   { --t-bg: #eaf1fe; --t-bd: #cddffb; --t-fg: #0a4fc4; --t-hv: #dce8fd; }
-.acao-verde  { --t-bg: #eaf8ec; --t-bd: #c8ebcf; --t-fg: #0e8a24; --t-hv: #dbf1df; }
-.acao-indigo { --t-bg: #eeedfc; --t-bd: #d5d2f7; --t-fg: #4a3fc0; --t-hv: #e2dff9; }
-
 .dicas-foto { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 2px 0; font-size: 12.5px; color: var(--muted); }
 .dicas-foto span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; vertical-align: middle; }
 .welcome .starters-title { margin: 22px 0 8px; font-size: 13px; color: var(--muted); font-weight: 500; }
@@ -692,16 +665,7 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .tam-rotulo { display: none; }
   .tam-texto button { min-width: 38px; height: 34px; }
 
-  .passos { margin-bottom: 12px; gap: 6px; }
-  .passos li { padding: 10px 4px 9px; gap: 6px; }
-  .passo-ic { width: 36px; height: 36px; }
-  .passo-ic svg { width: 20px; height: 20px; }
-  .passo-t b { font-size: 13.5px; }
-  .passo-t small { font-size: 11.5px; }
 
-  .acoes { grid-template-columns: 1fr; gap: 8px; }
-  .acao { min-height: 64px; padding: 11px 13px; }
-  .acao-t strong { font-size: 15px; }
 
   .welcome .starters-title { margin-top: 18px; }
   .msg-actions .link-btn { padding: 9px 13px; }
@@ -711,20 +675,12 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   body[data-modo="atendente"] .tam-texto { display: none; }
 }
 @media (max-width: 380px) {
-  .passo-t small { display: none; }
-  .acao svg { width: 36px; height: 36px; padding: 7px; }
   .msg-actions .link-btn span { font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mic-btn.gravando, .send.pulsa:not(:disabled) { animation: none !important; }
 }
 
-/* Letras muito grandes no celular: passos em lista vertical (evita "2 + 1") */
-@media (max-width: 800px) {
-  .zoom-alto .passos { grid-template-columns: 1fr; }
-  .zoom-alto .passos li { flex-direction: row; text-align: left; gap: 12px; padding: 10px 12px; }
-  .zoom-alto .passo-t small { display: block; }
-}
 
 
 /* Orientações da foto: aparecem só dentro das janelas da câmera */
@@ -841,3 +797,57 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 .envio-spin { width: 54px; height: 54px; margin: 2px auto 14px; border-radius: 50%; border: 5px solid var(--accent-soft); border-top-color: var(--accent); border-right-color: var(--green); animation: gira 0.9s linear infinite; }
 @keyframes gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .envio-spin { animation-duration: 3s !important; } }
+
+/* =====================================================================
+   Tela inicial: UM bloco só, em 3 passos. O passo 1 já traz os botões de envio.
+   ===================================================================== */
+.bloco-envio { margin: 6px 0 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.bloco-solo { padding: 14px; }
+.passos { list-style: none; margin: 0; padding: 0; }
+.passos li { display: flex; align-items: flex-start; gap: 16px; padding: 16px 18px; }
+.passos li + li { border-top: 1px solid var(--line); align-items: center; padding-top: 13px; padding-bottom: 13px; }
+.passos li:first-child { background: color-mix(in srgb, var(--accent) 4%, var(--panel)); }
+.passo-n { flex: none; min-width: 22px; font-family: var(--serif); font-size: 34px; line-height: .95; font-weight: 500; color: var(--accent); letter-spacing: -.02em; text-align: center; }
+.passo-corpo { flex: 1; min-width: 0; }
+.passo-t b { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+.passo-t small { display: block; margin-top: 2px; font-size: 13.5px; line-height: 1.4; color: var(--muted); }
+
+.acoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.acao {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 12px;
+  font: inherit; font-size: 15px; font-weight: 500; color: var(--accent); background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: 10px;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.acao svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.acao:hover { background: var(--accent-soft); border-color: var(--accent); }
+.acao:active { transform: scale(.985); }
+#btnFoto { background: var(--accent); color: #fff; border-color: var(--accent); }
+#btnFoto:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+@media (max-width: 640px) {
+  .passos li { gap: 12px; padding: 14px 14px; }
+  .passos li + li { padding-top: 12px; padding-bottom: 12px; }
+  .passo-n { font-size: 30px; min-width: 20px; }
+  .acoes { grid-template-columns: 1fr; }
+  .acao { min-height: 52px; justify-content: flex-start; padding-left: 16px; }
+  .bloco-solo { padding: 12px; }
+}
+
+/* "Ou" entre o envio de documento e o acesso por código */
+.ou-divisor { display: flex; align-items: center; gap: 14px; margin: 2px 0 14px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .12em; }
+.ou-divisor::before, .ou-divisor::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.bloco-codigo {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+}
+.codigo-texto { min-width: 0; }
+.codigo-texto b { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+.codigo-texto small { display: block; margin-top: 2px; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+.codigo-btn { flex: none; min-height: 46px; padding: 10px 16px; border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); color: var(--accent); font-weight: 500; }
+.codigo-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.codigo-btn:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
+@media (max-width: 640px) {
+  .bloco-codigo { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
+  .codigo-btn { min-height: 50px; justify-content: center; }
+}
