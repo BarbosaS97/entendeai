@@ -714,6 +714,19 @@
 
     let assistantWrap = null;
     let timersEspera = [];
+
+    // O texto vai aparecendo SEM "descer" a tela: o início da resposta fica fixo no topo
+    // e a tela só se move se a pessoa rolar.
+    let usuarioRolou = false, inicioFixo = false;
+    const aoRolar = () => { usuarioRolou = true; };
+    const EVENTOS_ROLAGEM = ["wheel", "touchmove", "pointerdown"];
+    EVENTOS_ROLAGEM.forEach((ev) => el.chat.addEventListener(ev, aoRolar, { passive: true }));
+    const fixarInicio = () => {
+      if (usuarioRolou || inicioFixo || !assistantWrap) return;
+      assistantWrap.scrollIntoView({ block: "start", behavior: "instant" });
+      const folga = assistantWrap.getBoundingClientRect().top - el.chat.getBoundingClientRect().top;
+      if (folga <= 30) inicioFixo = true;   // o início da resposta chegou ao topo: não mexe mais
+    };
     try {
       let convId = state.currentId;
       if (!convId) {
@@ -797,7 +810,7 @@
             if (!full) timersEspera.forEach(clearTimeout);
             full += ev.text;
             renderResposta(bubble, full);
-            scrollDown();
+            fixarInicio();
           } else if (ev.t === "done") {
             idResposta = ev.id || null;
             if (ev.title) {
@@ -821,6 +834,7 @@
       if (assistantWrap) assistantWrap.remove();
       showBanner(erroAmigavel(err));
     } finally {
+      EVENTOS_ROLAGEM.forEach((ev) => el.chat.removeEventListener(ev, aoRolar));
       setBusy(false);
       el.input.focus();
     }

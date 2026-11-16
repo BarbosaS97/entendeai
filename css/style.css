@@ -833,3 +833,6 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 @media (prefers-reduced-motion: reduce) {
   .leitura-anim .scan, .leitura-barra i, .leitura-passos li.ativo::before, .leitura-card, .camera-flash.on { animation: none !important; }
 }
+
+/* Ao fixar o início da resposta no topo, deixa uma folga acima */
+.messages > .msg { scroll-margin-top: 14px; }
