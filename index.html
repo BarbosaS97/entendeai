@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <script>try{var n=+localStorage.getItem('nivelTexto')||0;document.documentElement.style.setProperty('--zoom',[1,1.12,1.25,1.4][n]||1)}catch(e){}</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -48,6 +49,7 @@
         </button>
         <h1 class="topbar-title" id="topTitle"></h1>
         <img class="top-logo" src="img/logo.webp" alt="EntendAI" width="1455" height="656">
+        <div class="topbar-actions"><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div></div>
       </header>
 
       <div id="banner" class="banner" hidden role="status"></div>
@@ -57,17 +59,17 @@
           <div class="welcome-logo"><img class="logo-banner" src="img/logo-jf-df.webp" alt="Justiça Federal – Distrito Federal" width="1677" height="571"></div>
           <p class="eyebrow">Assistente de leitura jurídica</p>
           <h2>Entenda seu processo, sem complicação.</h2>
-          <p class="lead">Escolha um tema abaixo ou use a caixa de mensagem para digitar, colar um texto ou anexar um documento (PDF, foto, Word).</p>
-          <ul class="starters">
-            <li><button class="starter" data-prompt="Explique este texto em linguagem simples:&#10;&#10;">
-              <strong>Explicar um texto</strong><span>Petição, contrato ou lei</span></button></li>
-            <li><button class="starter" data-prompt="Quais são os prazos e o que preciso fazer neste documento?&#10;&#10;">
-              <strong>Prazos e providências</strong><span>O que fazer e até quando</span></button></li>
-            <li><button class="starter" data-prompt="Recebi uma intimação. O que isso significa?&#10;&#10;">
-              <strong>Recebi uma intimação</strong><span>O que o aviso exige de você</span></button></li>
-            <li><button class="starter" data-prompt="Explique esta sentença: quem ganhou, quem perdeu e se cabe recurso.&#10;&#10;">
-              <strong>Entender uma sentença</strong><span>Resultado e possibilidade de recurso</span></button></li>
-          </ul>
+          <p class="lead">Envie seu documento ou escreva sua dúvida. Eu explico em linguagem simples.</p>
+          <ol class="passos" aria-label="Como funciona">
+            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg></span><span class="passo-t"><b>1. Envie</b><small>o documento</small></span></li>
+            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span><span class="passo-t"><b>2. Leia</b><small>a explicação</small></span></li>
+            <li><span class="passo-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></span><span class="passo-t"><b>3. Pergunte</b><small>o que não entendeu</small></span></li>
+          </ol>
+          <div class="acoes" role="group" aria-label="Escolha como enviar">
+            <button type="button" class="acao acao-azul" id="btnFoto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg><span class="acao-t"><strong>Tirar foto do documento</strong><small>Abre a câmera</small></span></button>
+            <button type="button" class="acao acao-verde" id="btnArquivo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg><span class="acao-t"><strong>Escolher arquivo</strong><small>PDF, foto ou Word</small></span></button>
+            <button type="button" class="acao acao-indigo" id="btnDigitar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"/><path d="M14.5 6.5l3 3"/></svg><span class="acao-t"><strong>Digitar ou colar texto</strong><small>Escreva sua dúvida</small></span></button>
+          </div>
           <button type="button" class="code-cta" id="btnCodigoWelcome">
             <span>Recebeu um código do atendente? <strong>Clique aqui para acessar a conversa</strong></span>
           </button>
@@ -81,10 +83,12 @@
         <div class="files" id="files"></div>
         <form class="composer" id="composer">
           <input type="file" id="fileInput" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.txt,.md">
+          <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
           <button type="button" class="icon-btn" id="btnAttach" aria-label="Anexar arquivo" title="Anexar arquivo (PDF, imagem, Word, texto)">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 9.5l-6.4 6.4a4 4 0 01-5.7-5.7l7-7a2.7 2.7 0 013.8 3.8l-7 7a1.3 1.3 0 01-1.9-1.9l6.3-6.3"/></svg>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 9.5l-6.4 6.4a4 4 0 01-5.7-5.7l7-7a2.7 2.7 0 013.8 3.8l-7 7a1.3 1.3 0 01-1.9-1.9l6.3-6.3"/></svg><span class="icon-label">Anexar</span>
           </button>
-          <textarea id="input" rows="1" placeholder="Escreva, cole um texto ou arraste um arquivo" aria-label="Mensagem"></textarea>
+          <textarea id="input" rows="1" placeholder="Escreva sua dúvida ou anexe um documento" aria-label="Mensagem"></textarea>
+          <button type="button" class="icon-btn mic-btn" id="btnMic" aria-label="Falar em vez de digitar" aria-pressed="false" title="Falar em vez de digitar" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7.5" y="2.5" width="5" height="9" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0011 0M10 15v2.5"/></svg></button>
           <button type="submit" class="send" id="btnSend" aria-label="Enviar">
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M5 9l5-5 5 5"/></svg>
           </button>
@@ -109,16 +113,65 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="dlgWhats" aria-labelledby="dlgWhatsTitulo">
+    <div class="modal-body">
+      <h2 id="dlgWhatsTitulo">Enviar por WhatsApp</h2>
+      <p class="modal-text">Vai abrir o WhatsApp com a explicação pronta, para você escolher quem recebe.</p>
+      <p class="modal-note">A explicação pode conter dados pessoais seus ou de outras pessoas. Envie apenas para quem você confia.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnWhatsCancelar">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnWhatsOk">Abrir WhatsApp</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="dlgPrivacidade" aria-labelledby="dlgPrivTitulo">
+    <div class="modal-body">
+      <h2 id="dlgPrivTitulo">Antes de começar</h2>
+      <ul class="lista-simples">
+        <li>Sua conversa e os documentos que você enviar ficam guardados para você voltar depois. Só você vê, a menos que você passe um código a alguém.</li>
+        <li>Evite enviar senhas, dados de cartão ou documentos que não sejam do seu processo.</li>
+        <li>O EntendAI explica em linguagem simples, mas não substitui advogado(a).</li>
+        <li>Se usar o microfone, o navegador pode enviar o áudio ao fabricante para transformar sua voz em texto.</li>
+      </ul>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary btn-block" id="btnPrivOk">Entendi, continuar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="dlgDicasFoto" aria-labelledby="dlgDicasTitulo">
+    <div class="modal-body">
+      <h2 id="dlgDicasTitulo">Antes de tirar a foto</h2>
+      <p class="dicas-foto dicas-lista"><span>Mostre a página inteira</span><span>Com boa luz</span><span>Sem sombra</span></p>
+      <label class="check dicas-check"><input type="checkbox" id="chkDicasFoto"><span>Não mostrar este aviso de novo</span></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnDicasCancelar">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnDicasOk">Abrir a câmera</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal modal-camera" id="dlgCamera" aria-labelledby="dlgCameraTitulo">
+    <div class="modal-body">
+      <h2 id="dlgCameraTitulo">Tirar foto do documento</h2>
+      <p class="dicas-foto dicas-lista"><span>Mostre a página inteira</span><span>Com boa luz</span><span>Sem sombra</span></p>
+      <video id="camVideo" class="camera-video" autoplay playsinline muted></video>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnCamCancelar">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnCamTirar">Tirar foto</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="dropzone" id="dropzone" hidden><div>Solte o arquivo para anexar</div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/recursos.js"></script>
   <script src="js/codigo.js"></script>
 </body>
 </html>

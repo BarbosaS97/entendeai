@@ -22,14 +22,50 @@
 
   const MAX_BYTES = MAX_FILE_MB * 1024 * 1024;
   const MAX_OCR_PAGES = 12;
+
+  // ---------- bibliotecas pesadas: só carregam quando a pessoa anexa um arquivo ----------
+  const LIBS = {
+    mammoth: "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js",
+    pdfjs: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+    tesseract: "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js",
+  };
+  const _libs = {};
+  function carregarLib(nome) {
+    if (!_libs[nome]) {
+      _libs[nome] = new Promise((ok, falha) => {
+        const sc = document.createElement("script");
+        sc.src = LIBS[nome];
+        sc.onload = ok;
+        sc.onerror = () => { delete _libs[nome]; falha(new Error("lib")); };
+        document.head.appendChild(sc);
+      });
+    }
+    return _libs[nome];
+  }
+
+  // ---------- textos de ajuda ----------
+  const CONTATO_AJUDA = " Se o problema continuar, fale com o atendimento: (61) 3221-6600 ou seate.df@trf1.jus.br.";
+  function erroAmigavel(err) {
+    const base = err instanceof TypeError
+      ? "Não consegui conectar. Verifique sua internet e tente de novo."
+      : (err && err.message) || "Algo deu errado. Tente de novo.";
+    return MODO === "atendente" ? base : base + CONTATO_AJUDA;
+  }
   // "publico" (padrão) ou "atendente" (definido no <body data-modo="atendente">)
   const MODO = document.body.dataset.modo || "publico";
   // Texto do campo: versão curta no celular, para não ser cortado
   const mqCelular = window.matchMedia("(max-width: 800px)");
-  const PH_DESKTOP = el.input.placeholder, PH_CELULAR = "Digite ou anexe um documento";
-  const PLACEHOLDER_ATUAL = () => (mqCelular.matches ? PH_CELULAR : PH_DESKTOP);
+  const PH_DESKTOP = el.input.placeholder, PH_CELULAR = "Escreva sua dúvida aqui";
+  // Com letras muito grandes no celular sobra pouco espaço: usa o texto mais curto
+  const PLACEHOLDER_ATUAL = () => {
+    if (!mqCelular.matches) return PH_DESKTOP;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zoom")) || 1;
+    return z > 1.2 ? "Escreva aqui" : PH_CELULAR;
+  };
   el.input.placeholder = PLACEHOLDER_ATUAL();
-  mqCelular.addEventListener("change", () => { if (!state.readonly) el.input.placeholder = PLACEHOLDER_ATUAL(); });
+  const atualizarPlaceholder = () => { if (!state.readonly) el.input.placeholder = PLACEHOLDER_ATUAL(); };
+  mqCelular.addEventListener("change", atualizarPlaceholder);
+  document.addEventListener("entend:zoom", atualizarPlaceholder);
   const state = { user: null, convs: [], currentId: null, pending: [], busy: false, readonly: false };
 
   // Chama uma Edge Function com a sessão atual
@@ -56,6 +92,8 @@
     state.readonly = b;
     el.input.disabled = b;
     el.btnAttach.disabled = b;
+    const mic = $("btnMic"); if (mic) mic.disabled = b;
+    document.body.classList.toggle("somente-leitura", b);
     el.input.placeholder = b ? "Conversa somente leitura" : PLACEHOLDER_ATUAL();
     el.btnSend.disabled = state.busy || b;
   }
@@ -193,11 +231,11 @@
     const conv = state.convs.find((c) => c.id === id);
     el.topTitle.textContent = conv ? conv.title : "Conversa";
     renderConvs();
-    const { data, error } = await sb.from("messages").select("role,content,attachments").eq("conversation_id", id).order("created_at");
+    const { data, error } = await sb.from("messages").select("id,role,content,attachments").eq("conversation_id", id).order("created_at");
     if (error) { showBanner("Erro ao carregar mensagens: " + error.message); return; }
     el.messages.innerHTML = "";
     el.welcome.hidden = true;
-    for (const m of data) addMessage(m.role, m.content, m.attachments);
+    for (const m of data) addMessage(m.role, m.content, m.attachments, m.id);
     scrollDown();
     // Conversa de outra pessoa (compartilhada): confere se pode escrever
     if (conv && conv.user_id !== state.user.id) {
@@ -230,17 +268,35 @@
     if (state.currentId === id) newConv(); else renderConvs();
   }
 
-  // Lembrete de contato do atendimento (aparece só abaixo da última resposta; não no modo atendente)
-  function contatoLembrete() {
-    if (MODO === "atendente") return null;
-    const d = document.createElement("div");
-    d.className = "msg-contato";
-    d.innerHTML = 'Ficou com dúvida? Fale com o atendimento: <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a>';
-    return d;
+  // Destaca a seção "Prazos e datas" da resposta numa caixa de alerta
+  const semAcento = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  function destacarPrazos(container) {
+    container.querySelectorAll("h2").forEach((h) => {
+      if (h.closest(".callout-prazo") || !/^\s*prazos?\b/.test(semAcento(h.textContent))) return;
+      const caixa = document.createElement("section");
+      caixa.className = "callout-prazo";
+      h.parentNode.insertBefore(caixa, h);
+      let n = h;
+      while (n && !(n !== h && /^H[12]$/.test(n.tagName))) { const prox = n.nextSibling; caixa.appendChild(n); n = prox; }
+      if (/nao (encontr|ha |existe|consta)/.test(semAcento(caixa.textContent))) caixa.classList.add("vazio");
+    });
+  }
+  // Renderiza o markdown da resposta já com os prazos em destaque
+  function renderResposta(container, texto) {
+    container.innerHTML = renderMd(texto);
+    destacarPrazos(container);
+  }
+
+  // Acrescenta abaixo da resposta: ações (ouvir, copiar, imprimir, WhatsApp), continuações, avaliação e contato.
+  // A lógica fica em recursos.js; se ele não carregar, mantém só o botão Copiar.
+  function finalizarResposta(wrap, texto, id) {
+    if (id) wrap.dataset.id = id;
+    if (window.EntendRecursos && window.EntendRecursos.decorar) window.EntendRecursos.decorar(wrap, texto, id);
+    else wrap.appendChild(copyButton(() => texto));
   }
 
   // ---------- mensagens ----------
-  function addMessage(role, content, attachments = []) {
+  function addMessage(role, content, attachments = [], id = null) {
     el.welcome.hidden = true;
     const wrap = document.createElement("div");
     wrap.className = "msg " + role;
@@ -259,9 +315,9 @@
       if (content) html += `<div class="bubble">${esc(content)}</div>`;
       wrap.innerHTML = html;
     } else {
-      wrap.innerHTML = `<div class="bubble md">${renderMd(content)}</div>`;
-      wrap.appendChild(copyButton(() => content));
-      const lembrete = contatoLembrete(); if (lembrete) wrap.appendChild(lembrete);
+      wrap.innerHTML = '<div class="bubble md"></div>';
+      renderResposta(wrap.firstChild, content);
+      finalizarResposta(wrap, content, id);
     }
     el.messages.appendChild(wrap);
     return wrap;
@@ -269,6 +325,7 @@
 
   // ---------- leitura de arquivos (tudo no navegador) ----------
   async function ocrImage(source, onProgress) {
+    await carregarLib("tesseract");
     const worker = await Tesseract.createWorker("por", 1, {
       logger: (m) => { if (m.status === "recognizing text" && onProgress) onProgress(m.progress); },
     });
@@ -281,6 +338,8 @@
   }
 
   async function readPdf(file, status) {
+    status("Preparando o leitor de documentos...");
+    await carregarLib("pdfjs");
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
     let text = "";
@@ -295,7 +354,7 @@
     const pages = Math.min(pdf.numPages, MAX_OCR_PAGES);
     let ocr = "";
     for (let i = 1; i <= pages; i++) {
-      status(`Lendo página ${i} de ${pages} (documento escaneado)...`);
+      status(`Lendo a página ${i} de ${pages}. Documentos escaneados demoram um pouco mais...`);
       const page = await pdf.getPage(i);
       const viewport = page.getViewport({ scale: 2 });
       const canvas = document.createElement("canvas");
@@ -310,11 +369,12 @@
   async function extractText(file, status) {
     const e = ext(file.name);
     if (e === "txt" || e === "md") return file.text();
+    if (e === "docx") { status("Preparando o leitor de documentos..."); await carregarLib("mammoth"); }
     if (e === "docx") return (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
     if (e === "pdf") return readPdf(file, status);
     if (["png", "jpg", "jpeg", "webp"].includes(e)) {
-      status("Lendo o texto da imagem...");
-      return ocrImage(file, (p) => status(`Lendo o texto da imagem... ${Math.round(p * 100)}%`));
+      status("Lendo o texto da foto. Pode levar até 1 minuto...");
+      return ocrImage(file, (p) => status(`Lendo o texto da foto... ${Math.round(p * 100)}%`));
     }
     throw new Error("unsupported");
   }
@@ -327,13 +387,15 @@
       setBusy(true);
       try {
         const text = (await extractText(file, (s) => showBanner(s, false))).trim();
-        if (!text) { showBanner(`Não encontrei texto legível em "${file.name}". Tente uma imagem mais nítida ou cole o texto.`); continue; }
+        if (!text) { showBanner(`Não consegui ler o texto de "${file.name}". Tire uma nova foto com mais luz, mostrando a página inteira, ou cole o texto na caixa de mensagem.`); continue; }
         state.pending.push({ name: file.name, text, file, mime: file.type || mimePorExtensao(file.name) });
         showBanner("");
       } catch (err) {
         showBanner(err.message === "unsupported"
           ? `Formato não suportado: ${file.name}. Use PDF, imagem, Word (.docx) ou texto.`
-          : `Não consegui ler "${file.name}".`);
+          : err.message === "lib"
+            ? "Não consegui carregar o leitor de arquivos. Verifique sua internet e tente de novo."
+            : `Não consegui ler "${file.name}". Tente outro arquivo, uma foto mais nítida ou cole o texto.`);
       } finally {
         setBusy(false);
       }
@@ -342,6 +404,7 @@
   }
   function renderPending() {
     el.files.innerHTML = "";
+    el.btnSend.classList.toggle("pulsa", state.pending.length > 0);
     state.pending.forEach((f, i) => {
       const chip = document.createElement("span");
       chip.className = "file-chip";
@@ -349,6 +412,12 @@
       chip.querySelector(".x").onclick = () => { state.pending.splice(i, 1); renderPending(); };
       el.files.appendChild(chip);
     });
+    if (state.pending.length) {
+      const dica = document.createElement("span");
+      dica.className = "hint-enviar";
+      dica.textContent = "Pronto! Agora toque na seta azul para enviar.";
+      el.files.appendChild(dica);
+    }
   }
 
   // ---------- envio ----------
@@ -356,10 +425,15 @@
     if (state.busy || state.readonly) return;
     const content = el.input.value.trim();
     if (!content && !state.pending.length) return;
+    // Primeiro uso (chat público): aviso de privacidade em linguagem simples
+    if (window.EntendRecursos && window.EntendRecursos.garantirPrivacidade) {
+      if (!(await window.EntendRecursos.garantirPrivacidade())) return;
+    }
     setBusy(true);
     showBanner("");
 
     let assistantWrap = null;
+    let timersEspera = [];
     try {
       let convId = state.currentId;
       if (!convId) {
@@ -397,9 +471,16 @@
 
       assistantWrap = document.createElement("div");
       assistantWrap.className = "msg assistant";
-      assistantWrap.innerHTML = '<div class="bubble md"><span class="status"><span class="dots"><i></i><i></i><i></i></span>Analisando o texto</span></div>';
+      const temArquivo = attachments.length > 0;
+      assistantWrap.innerHTML = '<div class="bubble md"><span class="status" role="status"><span class="dots"><i></i><i></i><i></i></span><span class="status-txt"></span></span></div>';
       el.messages.appendChild(assistantWrap);
       const bubble = assistantWrap.firstChild;
+      const statusTxt = bubble.querySelector(".status-txt");
+      statusTxt.textContent = temArquivo ? "Estou lendo o seu documento. Pode levar até 1 minuto." : "Estou preparando a resposta...";
+      timersEspera = [
+        setTimeout(() => { statusTxt.textContent = "Quase lá. Estou organizando a explicação..."; }, 12000),
+        setTimeout(() => { statusTxt.textContent = "Está demorando um pouco mais que o normal. Obrigado pela paciência."; }, 35000),
+      ];
       scrollDown();
 
       const { data: { session } } = await sb.auth.getSession();
@@ -421,7 +502,7 @@
 
       const reader = res.body.getReader();
       const dec = new TextDecoder();
-      let buf = "", full = "", failed = null;
+      let buf = "", full = "", failed = null, idResposta = null;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -432,10 +513,12 @@
           if (!p.startsWith("data:")) continue;
           const ev = JSON.parse(p.slice(5));
           if (ev.t === "delta") {
+            if (!full) timersEspera.forEach(clearTimeout);
             full += ev.text;
-            bubble.innerHTML = renderMd(full);
+            renderResposta(bubble, full);
             scrollDown();
           } else if (ev.t === "done") {
+            idResposta = ev.id || null;
             if (ev.title) {
               const c = state.convs.find((x) => x.id === convId);
               if (c) { c.title = ev.title; el.topTitle.textContent = ev.title; }
@@ -445,22 +528,29 @@
           }
         }
       }
-      if (failed) showBanner(failed);
+      timersEspera.forEach(clearTimeout);
+      if (failed) showBanner(failed + (MODO === "atendente" ? "" : CONTATO_AJUDA));
 
       const idx = state.convs.findIndex((c) => c.id === convId);
       if (idx > 0) state.convs.unshift(...state.convs.splice(idx, 1));
       renderConvs();
-      if (full) {
-        assistantWrap.appendChild(copyButton(() => full));
-        const lembrete = contatoLembrete(); if (lembrete) assistantWrap.appendChild(lembrete);
-      }
+      if (full) finalizarResposta(assistantWrap, full, idResposta);
     } catch (err) {
+      timersEspera.forEach(clearTimeout);
       if (assistantWrap) assistantWrap.remove();
-      showBanner(err.message || "Algo deu errado.");
+      showBanner(erroAmigavel(err));
     } finally {
       setBusy(false);
       el.input.focus();
     }
+  }
+
+  // Envia um texto pronto (usado pelos botões de continuação)
+  function enviarTexto(texto) {
+    if (state.busy || state.readonly) return;
+    el.input.value = texto;
+    autoGrow();
+    send();
   }
 
   // ---------- menu mobile ----------
@@ -527,7 +617,7 @@
 
   // ---------- início ----------
   // API usada pelos módulos extras (atendente.js e codigo.js)
-  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv };
+  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv, send, addFiles, copyButton, renderMd, enviarTexto, autoGrow };
 
   // No modo atendente, quem inicia é o atendente.js (depois do login).
   if (MODO !== "atendente") {

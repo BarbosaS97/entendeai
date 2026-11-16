@@ -566,3 +566,171 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .messages > .msg.assistant:last-child .msg-contato { display: block; }
 @media (max-width: 800px) { .contato-inline { font-size: 12.5px; } }
 .contato-inline a, .msg-contato a { white-space: nowrap; }
+
+/* =====================================================================
+   Facilidade de uso: letras maiores, atalhos grandes, passos, ações da resposta
+   ===================================================================== */
+:root { --zoom: 1; }
+/* "Letras maiores": o zoom escala toda a interface; a altura é compensada para o app caber na tela */
+body { zoom: var(--zoom); font-size: 17px; }
+.app { height: calc(100dvh / var(--zoom)); }
+.login { min-height: calc(100dvh / var(--zoom)); }
+.md { font-size: 17px; }
+
+/* Controle de tamanho das letras (A- / A+) */
+.tam-texto {
+  display: flex; align-items: center; gap: 2px; padding: 2px; margin-left: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+}
+.tam-rotulo { font-size: 12px; color: var(--muted); padding: 0 6px 0 8px; }
+.tam-texto button {
+  min-width: 38px; height: 34px; border: 0; background: none; border-radius: 8px; color: var(--accent);
+  font-weight: 600; font-family: var(--sans); line-height: 1;
+}
+.tam-texto button span { font-size: .8em; margin-left: 1px; }
+#btnMenos { font-size: 13px; }
+#btnMais { font-size: 18px; }
+.tam-texto button:hover:not(:disabled) { background: var(--accent-soft); }
+.tam-texto button:disabled { opacity: .3; cursor: not-allowed; }
+.topbar-actions { align-items: center; }
+.topbar-actions .tam-texto { margin-left: 0; }
+
+/* Passos "Como funciona" */
+.passos { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.passos li {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+  padding: 12px 6px 11px; background: var(--side); border: 1px solid var(--line); border-radius: 12px;
+}
+.passo-ic { width: 42px; height: 42px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; }
+.passo-ic svg { width: 24px; height: 24px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.passo-t b { display: block; font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+.passo-t small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+
+/* Atalhos grandes para enviar o documento */
+.acoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.acao {
+  display: flex; align-items: center; gap: 12px; text-align: left; min-height: 66px; padding: 12px 14px;
+  background: var(--t-bg); border: 1px solid var(--t-bd); border-radius: 14px; font: inherit; color: var(--text);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.acao svg { width: 40px; height: 40px; padding: 8px; flex: none; border-radius: 50%; background: rgba(255,255,255,.75); fill: none; stroke: var(--t-fg); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.acao-t strong { display: block; font-size: 15.5px; font-weight: 600; color: var(--t-fg); line-height: 1.25; }
+.acao-t small { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
+.acao:hover { background: var(--t-hv); border-color: var(--t-fg); }
+.acao:active { transform: scale(.985); }
+.acao-azul   { --t-bg: #eaf1fe; --t-bd: #cddffb; --t-fg: #0a4fc4; --t-hv: #dce8fd; }
+.acao-verde  { --t-bg: #eaf8ec; --t-bd: #c8ebcf; --t-fg: #0e8a24; --t-hv: #dbf1df; }
+.acao-indigo { --t-bg: #eeedfc; --t-bd: #d5d2f7; --t-fg: #4a3fc0; --t-hv: #e2dff9; }
+
+.dicas-foto { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 2px 0; font-size: 12.5px; color: var(--muted); }
+.dicas-foto span::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; vertical-align: middle; }
+.welcome .starters-title { margin: 22px 0 8px; font-size: 13px; color: var(--muted); font-weight: 500; }
+
+/* Campo de digitar: rótulo "Anexar", microfone, aviso de envio */
+.icon-btn .icon-label { display: none; }
+@media (min-width: 801px) {
+  #btnAttach { padding: 8px 12px 8px 10px; gap: 6px; align-items: center; }
+  #btnAttach .icon-label { display: inline; font-size: 14px; font-weight: 500; color: var(--text); }
+}
+.mic-btn.gravando { background: #fde8e8; color: #c0262d; animation: gravando 1.2s ease-in-out infinite; }
+@keyframes gravando { 0%, 100% { box-shadow: 0 0 0 0 rgba(192, 38, 45, .35); } 50% { box-shadow: 0 0 0 7px rgba(192, 38, 45, 0); } }
+.send.pulsa:not(:disabled) { animation: pulsa 1.6s ease-in-out infinite; }
+@keyframes pulsa { 0%, 100% { box-shadow: 0 0 0 0 rgba(10, 79, 196, .4); } 50% { box-shadow: 0 0 0 8px rgba(10, 79, 196, 0); } }
+.hint-enviar { flex-basis: 100%; font-size: 13.5px; font-weight: 500; color: var(--accent); padding: 2px 2px 0; }
+
+/* Resposta: caixa de prazos em destaque */
+.callout-prazo { margin: 1.3em 0; padding: 14px 18px 12px; background: #fff6e0; border: 1px solid #f1d58a; border-left: 6px solid #e5a000; border-radius: 12px; }
+.callout-prazo h2 { border: 0; padding: 0; margin: 0 0 .35em; color: #7a4b00; display: flex; align-items: center; gap: 10px; font-size: 1.2em; }
+.callout-prazo h2::before {
+  content: ""; width: 26px; height: 26px; flex: none; background: #e5a000;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>") center / contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>") center / contain no-repeat;
+}
+.callout-prazo li::marker { color: #c58a00; }
+.callout-prazo.vazio { background: var(--side); border-color: var(--line); border-left-color: #aab3c5; }
+.callout-prazo.vazio h2 { color: var(--muted); }
+.callout-prazo.vazio h2::before { background: #aab3c5; }
+
+/* Resposta: ações, continuações e avaliação */
+.msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.msg-actions .link-btn {
+  padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--text); font-size: 13.5px; font-weight: 500; transition: background .12s, border-color .12s;
+}
+.msg-actions .link-btn:hover { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); color: var(--accent); }
+.msg-actions .link-btn.ativo { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.msg-actions .link-btn svg { width: 16px; height: 16px; }
+
+.msg-seguir { display: none; margin-top: 16px; }
+.messages > .msg.assistant:last-child .msg-seguir { display: block; }
+body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: none !important; }
+.msg-seguir-t { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.msg-seguir-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.msg-seguir-lista button {
+  padding: 10px 15px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--accent);
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  transition: background .12s, border-color .12s;
+}
+.msg-seguir-lista button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
+
+.msg-avalia { display: none; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; font-size: 14px; color: var(--muted); }
+.messages > .msg.assistant:last-child .msg-avalia { display: flex; }
+.msg-avalia button { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); font-weight: 500; font-size: 14px; color: var(--text); }
+.msg-avalia button:hover { border-color: var(--accent); color: var(--accent); }
+.msg-avalia .ok { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-weight: 500; }
+.msg-avalia .ok svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.msg.precisa-ajuda .msg-contato { display: block; background: #fff6e0; border: 1px solid #f1d58a; border-radius: 10px; padding: 10px 12px; color: var(--text); }
+
+.status { gap: 10px; }
+.lista-simples { margin: 0 0 4px; padding-left: 1.2em; font-size: 15px; line-height: 1.55; color: var(--text); }
+.lista-simples li { margin: .55em 0; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 800px) {
+  body { font-size: 16.5px; }
+  .md { font-size: 16.5px; }
+  .tam-rotulo { display: none; }
+  .tam-texto button { min-width: 38px; height: 34px; }
+
+  .passos { margin-bottom: 12px; gap: 6px; }
+  .passos li { padding: 10px 4px 9px; gap: 6px; }
+  .passo-ic { width: 36px; height: 36px; }
+  .passo-ic svg { width: 20px; height: 20px; }
+  .passo-t b { font-size: 13.5px; }
+  .passo-t small { font-size: 11.5px; }
+
+  .acoes { grid-template-columns: 1fr; gap: 8px; }
+  .acao { min-height: 64px; padding: 11px 13px; }
+  .acao-t strong { font-size: 15px; }
+
+  .welcome .starters-title { margin-top: 18px; }
+  .msg-actions .link-btn { padding: 9px 13px; }
+  .msg-seguir-lista button { padding: 11px 14px; }
+}
+@media (max-width: 560px) {
+  body[data-modo="atendente"] .tam-texto { display: none; }
+}
+@media (max-width: 380px) {
+  .passo-t small { display: none; }
+  .acao svg { width: 36px; height: 36px; padding: 7px; }
+  .msg-actions .link-btn span { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mic-btn.gravando, .send.pulsa:not(:disabled) { animation: none !important; }
+}
+
+/* Letras muito grandes no celular: passos em lista vertical (evita "2 + 1") */
+@media (max-width: 800px) {
+  .zoom-alto .passos { grid-template-columns: 1fr; }
+  .zoom-alto .passos li { flex-direction: row; text-align: left; gap: 12px; padding: 10px 12px; }
+  .zoom-alto .passo-t small { display: block; }
+}
+
+/* Janela da webcam (computador) */
+.modal-camera { width: min(560px, calc(100vw - 24px)); }
+.camera-video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #000; border-radius: 12px; }
+
+/* Orientações da foto: aparecem só dentro das janelas da câmera */
+.dicas-lista { flex-direction: column; gap: 10px; margin: 4px 0 14px; font-size: 15px; color: var(--text); }
+.dicas-lista span::before { width: 8px; height: 8px; margin-right: 10px; }
+.dicas-check { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
