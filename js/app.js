@@ -17,6 +17,7 @@
     copy: '<svg viewBox="0 0 20 20"><rect x="7" y="7" width="9" height="9" rx="1.5"/><path d="M13 7V5a1.5 1.5 0 00-1.5-1.5H5A1.5 1.5 0 003.5 5v6.5A1.5 1.5 0 005 13h2"/></svg>',
     check: '<svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9"/></svg>',
     file: '<svg viewBox="0 0 20 20"><path d="M5 2.5h6l4 4v11H5z"/><path d="M11 2.5v4h4"/></svg>',
+    download: '<svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16.5h12"/></svg>',
   };
 
   const MAX_BYTES = MAX_FILE_MB * 1024 * 1024;
@@ -55,7 +56,13 @@
   }
 
   // ---------- util ----------
-  const ext = (n) => (n.split(".").pop() || "").toLowerCase();
+  const safeName = (n) => n.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const MIMES = {
+    pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", txt: "text/plain", md: "text/markdown",
+  };
+  const mimePorExtensao = (n) => MIMES[(n.split(".").pop() || "").toLowerCase()] || "application/octet-stream";
+  const ext = (n) =>(n.split(".").pop() || "").toLowerCase();
   const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const renderMd = (text) => DOMPurify.sanitize(marked.parse(text, { breaks: true, gfm: true }));
 
@@ -203,6 +210,11 @@
       : "Remover esta conversa do seu histórico? Ela continua existindo para quem a criou.";
     if (!confirm(aviso)) return;
     if (minha) {
+      // apaga também os arquivos guardados desta conversa
+      try {
+        const { data: arqs } = await sb.storage.from("documentos").list(id);
+        if (arqs?.length) await sb.storage.from("documentos").remove(arqs.map((f) => `${id}/${f.name}`));
+      } catch {}
       const { error } = await sb.from("conversations").delete().eq("id", id);
       if (error) { showBanner("Erro ao excluir: " + error.message); return; }
     } else {
@@ -221,7 +233,14 @@
     if (role === "user") {
       let html = "";
       if (attachments?.length) {
-        html += '<div class="msg-att">' + attachments.map((a) => `<span class="att">${ICON.file}${esc(a.name)}</span>`).join("") + "</div>";
+        html += '<div class="msg-att">' + attachments.map((a) => {
+          if (!a.path) return `<span class="att">${ICON.file}${esc(a.name)}</span>`; // mensagens antigas, sem arquivo guardado
+          const d = `data-path="${esc(a.path)}" data-name="${esc(a.name)}"`;
+          return `<span class="att att-file">
+            <button type="button" class="att-open" ${d} title="Abrir arquivo">${ICON.file}<span>${esc(a.name)}</span></button>
+            <button type="button" class="att-dl" ${d} aria-label="Baixar ${esc(a.name)}" title="Baixar">${ICON.download}</button>
+          </span>`;
+        }).join("") + "</div>";
       }
       if (content) html += `<div class="bubble">${esc(content)}</div>`;
       wrap.innerHTML = html;
@@ -294,7 +313,7 @@
       try {
         const text = (await extractText(file, (s) => showBanner(s, false))).trim();
         if (!text) { showBanner(`Não encontrei texto legível em "${file.name}". Tente uma imagem mais nítida ou cole o texto.`); continue; }
-        state.pending.push({ name: file.name, text });
+        state.pending.push({ name: file.name, text, file, mime: file.type || mimePorExtensao(file.name) });
         showBanner("");
       } catch (err) {
         showBanner(err.message === "unsupported"
@@ -328,10 +347,8 @@
     let assistantWrap = null;
     try {
       let convId = state.currentId;
-      const attachments = state.pending.map((f) => ({ name: f.name, text: f.text }));
-
       if (!convId) {
-        const title = cleanTitle(content || attachments[0].name);
+        const title = cleanTitle(content || state.pending[0].name);
         // No modo atendente a origem é 'atendente'; o nome do atendente é preenchido pelo banco.
         const { data, error } = await sb.from("conversations")
           .insert({ title, origem: MODO === "atendente" ? "atendente" : "publico" })
@@ -343,6 +360,19 @@
         el.topTitle.textContent = data.title;
         renderConvs();
       }
+
+      // Guarda o arquivo original (para abrir/baixar depois). Se falhar, segue só com o texto.
+      const attachments = [];
+      let falhouGuardar = false;
+      for (const f of state.pending) {
+        const a = { name: f.name, text: f.text };
+        const path = `${convId}/${crypto.randomUUID()}-${safeName(f.name)}`;
+        const { error } = await sb.storage.from("documentos").upload(path, f.file, { contentType: f.mime });
+        if (error) { falhouGuardar = true; console.warn("upload", error.message); }
+        else { a.path = path; a.mime = f.mime; a.size = f.file.size; }
+        attachments.push(a);
+      }
+      if (falhouGuardar) showBanner("A análise foi feita, mas o arquivo original não pôde ser guardado para download.", false);
 
       addMessage("user", content, attachments);
       el.input.value = "";
@@ -423,6 +453,30 @@
   el.input.addEventListener("input", autoGrow);
   el.input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+  });
+  // Abrir (nova aba) ou baixar um arquivo anexado, por link assinado de curta duração
+  el.messages.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".att-open, .att-dl");
+    if (!btn) return;
+    const { path, name } = btn.dataset;
+    const baixar = btn.classList.contains("att-dl");
+    const aba = baixar ? null : window.open("", "_blank"); // abre antes do await para não ser bloqueada
+    const { data, error } = await sb.storage.from("documentos")
+      .createSignedUrl(path, 120, baixar ? { download: name } : undefined);
+    if (error || !data?.signedUrl) {
+      aba?.close();
+      showBanner("Não foi possível abrir o arquivo. Ele pode ter sido removido ou o acesso foi encerrado.");
+      return;
+    }
+    if (baixar) {
+      const a = document.createElement("a");
+      a.href = data.signedUrl; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+    } else if (aba) {
+      aba.location.href = data.signedUrl;
+    } else {
+      window.open(data.signedUrl, "_blank");
+    }
   });
   el.btnNew.onclick = newConv;
   el.btnAttach.onclick = () => el.fileInput.click();

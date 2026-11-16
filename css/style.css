@@ -452,3 +452,16 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 }
 .side-link svg { width: 18px; height: 18px; stroke-width: 1.8; }
 .side-link:hover { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
+
+/* Anexos clicáveis nas mensagens */
+.att-file { padding: 0; gap: 0; overflow: hidden; }
+.att-file button {
+  display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; color: inherit;
+  font: inherit; padding: 4px 9px; cursor: pointer;
+}
+.att-file .att-open { max-width: 260px; color: var(--text); }
+.att-file .att-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-file .att-dl { border-left: 1px solid var(--line); padding: 4px 8px; }
+.att-file button:hover { background: var(--accent-soft); color: var(--accent); }
+.att-file .att-open:hover span { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 800px) { .att-file .att-open { max-width: 200px; } .att-file button { padding: 7px 10px; } }
