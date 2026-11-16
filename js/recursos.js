@@ -301,7 +301,7 @@
       const u = new SpeechSynthesisUtterance(p);
       u.lang = "pt-BR";
       if (voz) u.voice = voz;
-      u.rate = 0.95;
+      u.rate = 0.85;
       u.onerror = fim;
       if (i === partes.length - 1) u.onend = fim;
       speechSynthesis.speak(u);

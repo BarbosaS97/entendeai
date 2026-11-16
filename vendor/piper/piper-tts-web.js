@@ -1,5 +1,6 @@
 // Cópia local de @mintplex-labs/piper-tts-web@1.0.5 (MIT). Única alteração: o import do runtime ONNX aponta para o arquivo
 // local ort.wasm.min.js (onnxruntime-web 1.18.0, MIT), para não depender da resolução de versões de um CDN.
+// Também: a velocidade da fala é ajustável por globalThis.PIPER_FATOR_DURACAO (maior = mais devagar).
 // Também: o armazenamento do modelo usa Cache Storage (em vez de OPFS, que falha no Safari) e download() espera a gravação.
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
@@ -377,7 +378,7 @@ predictChunk_fn = async function(text) {
   });
   const speakerId = 0;
   const noiseScale = __privateGet(this, _modelConfig).inference.noise_scale;
-  const lengthScale = __privateGet(this, _modelConfig).inference.length_scale;
+  const lengthScale = __privateGet(this, _modelConfig).inference.length_scale * (globalThis.PIPER_FATOR_DURACAO || 1);
   const noiseW = __privateGet(this, _modelConfig).inference.noise_w;
   const session = __privateGet(this, _ortSession);
   const feeds = {

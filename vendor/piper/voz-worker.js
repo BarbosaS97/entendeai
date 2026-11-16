@@ -6,6 +6,8 @@
 import * as tts from "./piper-tts-web.js";
 
 const VOZ_ID = "pt_BR-faber-medium";   // voz em português do Brasil (cerca de 63 MB, baixada uma única vez)
+// Velocidade da fala: 1 = padrão do modelo; valores maiores falam mais devagar. 1,35 (cerca de 150 palavras por minuto) é confortável para explicações.
+self.PIPER_FATOR_DURACAO = 1.35;
 let fila = Promise.resolve();            // uma tarefa por vez: o motor de síntese não aceita duas ao mesmo tempo
 
 async function tratar({ id, tipo, texto }) {
