@@ -18,6 +18,8 @@
     check: '<svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9"/></svg>',
     file: '<svg viewBox="0 0 20 20"><path d="M5 2.5h6l4 4v11H5z"/><path d="M11 2.5v4h4"/></svg>',
     download: '<svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16.5h12"/></svg>',
+    esq: '<svg viewBox="0 0 20 20"><path d="M12 5l-5 5 5 5"/></svg>',
+    dir: '<svg viewBox="0 0 20 20"><path d="M8 5l5 5-5 5"/></svg>',
   };
 
   const MAX_BYTES = MAX_FILE_MB * 1024 * 1024;
@@ -215,6 +217,7 @@
   function newConv() {
     setCurrent(null);
     setReadonly(false);
+    limparThumbs();
     state.pending = [];
     renderPending();
     el.messages.innerHTML = "";
@@ -324,100 +327,377 @@
   }
 
   // ---------- leitura de arquivos (tudo no navegador) ----------
-  async function ocrImage(source, onProgress) {
-    await carregarLib("tesseract");
-    const worker = await Tesseract.createWorker("por", 1, {
-      logger: (m) => { if (m.status === "recognizing text" && onProgress) onProgress(m.progress); },
-    });
-    try {
-      const { data } = await worker.recognize(source);
-      return data.text;
-    } finally {
-      await worker.terminate();
+  const MAX_FILES = 10;
+  const CABECALHO_OCR = "[Texto obtido por leitura automática de foto ou documento escaneado; pode conter erros de leitura.]\n";
+
+  // Painel de leitura: aparece no centro da tela e bloqueia o resto enquanto o arquivo é lido
+  const Leitura = (() => {
+    const raiz = $("leitura");
+    if (!raiz) {
+      return { abrir() {}, atualizar() {}, async concluir() {}, fechar() {}, corrida: (p) => p, get cancelado() { return false; } };
     }
+    const barra = $("leituraBarra"), preench = barra.firstElementChild, pct = $("leituraPct");
+    const etapaTxt = $("leituraEtapa"), arq = $("leituraArq"), dica = $("leituraDica"), titulo = $("leituraTitulo");
+    const passos = [...raiz.querySelectorAll(".leitura-passos li")];
+    const DICAS = [
+      "Fotos nítidas e bem iluminadas geram explicações melhores.",
+      "Você pode enviar várias fotos de uma vez, na ordem das páginas.",
+      "Cada página pode levar alguns segundos. Obrigado pela paciência.",
+      "Evite sombras e dedos na frente do texto.",
+    ];
+    let aberto = false, cancelado = false, rejeitar = null, cancelP = null, timer = null, iDica = 0, total = 1;
+    let maxFrac = {}, maxEtapa = {};
+
+    function mostrarDica(i) {
+      dica.classList.add("troca");
+      setTimeout(() => { dica.textContent = DICAS[i % DICAS.length]; dica.classList.remove("troca"); }, 250);
+    }
+    function abrir(n) {
+      total = Math.max(1, n); cancelado = false; maxFrac = {}; maxEtapa = {}; iDica = 0; aberto = true;
+      cancelP = new Promise((_, rej) => { rejeitar = rej; });
+      cancelP.catch(() => {});
+      titulo.textContent = total > 1 ? "Lendo os seus documentos" : "Lendo o seu documento";
+      dica.textContent = DICAS[0];
+      preench.style.width = "0%"; pct.textContent = "0%"; barra.setAttribute("aria-valuenow", "0");
+      passos.forEach((li) => (li.className = ""));
+      etapaTxt.textContent = "Preparando...";
+      arq.textContent = "";
+      raiz.hidden = false;
+      el.app.inert = true;
+      timer = setInterval(() => mostrarDica(++iDica), 5500);
+      $("leituraCancelar").focus();
+    }
+    function atualizar({ i, nome, etapa, frac, msg }) {
+      if (!aberto) return;
+      maxFrac[i] = Math.max(maxFrac[i] || 0, frac || 0);
+      maxEtapa[i] = Math.max(maxEtapa[i] || 1, etapa || 1);
+      const geral = Math.min(((i - 1) + maxFrac[i]) / total, 0.99) * 100;
+      preench.style.width = geral.toFixed(1) + "%";
+      pct.textContent = Math.round(geral) + "%";
+      barra.setAttribute("aria-valuenow", String(Math.round(geral)));
+      arq.textContent = total > 1 ? `Arquivo ${i} de ${total}: ${nome}` : nome;
+      if (msg) etapaTxt.textContent = msg;
+      passos.forEach((li, k) => { li.className = k + 1 < maxEtapa[i] ? "feito" : k + 1 === maxEtapa[i] ? "ativo" : ""; });
+    }
+    async function concluir() {
+      if (!aberto || cancelado) return;
+      preench.style.width = "100%"; pct.textContent = "100%"; barra.setAttribute("aria-valuenow", "100");
+      etapaTxt.textContent = "Pronto!";
+      passos.forEach((li) => (li.className = "feito"));
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    function fechar() {
+      aberto = false;
+      clearInterval(timer);
+      raiz.hidden = true;
+      el.app.inert = false;
+    }
+    $("leituraCancelar").onclick = () => {
+      cancelado = true;
+      if (rejeitar) rejeitar(new Error("cancelado"));
+      encerrarOcr();
+    };
+    return {
+      abrir, atualizar, concluir, fechar,
+      corrida: (p) => Promise.race([p, cancelP]),   // interrompe a espera se a pessoa cancelar
+      get cancelado() { return cancelado; },
+    };
+  })();
+  const verificarCancelado = () => { if (Leitura.cancelado) throw new Error("cancelado"); };
+
+  // ----- leitor de texto de imagens (Tesseract), reaproveitado entre as páginas/fotos do mesmo envio
+  let ocrWorker = null;
+  let ocrAoProgresso = () => {};
+  const ETAPAS_OCR = {
+    "loading tesseract core": [0.12, 0.18],
+    "initializing tesseract": [0.18, 0.22],
+    "loading language traineddata": [0.22, 0.32],
+    "initializing api": [0.32, 0.34],
+  };
+  async function obterOcr() {
+    if (ocrWorker) return ocrWorker;
+    const w = await Tesseract.createWorker("por", 1, { logger: (m) => ocrAoProgresso(m) });
+    try { await w.setParameters({ preserve_interword_spaces: "1" }); } catch {}
+    ocrWorker = w;
+    return w;
+  }
+  async function encerrarOcr() {
+    if (!ocrWorker) return;
+    const w = ocrWorker;
+    ocrWorker = null;
+    try { await w.terminate(); } catch {}
   }
 
-  async function readPdf(file, status) {
-    status("Preparando o leitor de documentos...");
-    await carregarLib("pdfjs");
+  // ----- preparo da imagem: orientação, tamanho, tons de cinza, contraste e luz irregular
+  async function paraCanvas(fonte) {
+    if (fonte instanceof HTMLCanvasElement) return fonte;
+    let bmp;
+    try {
+      bmp = await createImageBitmap(fonte, { imageOrientation: "from-image" });   // respeita foto de celular girada
+    } catch {
+      bmp = await new Promise((ok, falha) => {
+        const url = URL.createObjectURL(fonte), im = new Image();
+        im.onload = () => { URL.revokeObjectURL(url); ok(im); };
+        im.onerror = () => { URL.revokeObjectURL(url); falha(new Error("img")); };
+        im.src = url;
+      });
+    }
+    const c = document.createElement("canvas");
+    c.width = bmp.width || bmp.naturalWidth; c.height = bmp.height || bmp.naturalHeight;
+    c.getContext("2d").drawImage(bmp, 0, 0);
+    if (bmp.close) bmp.close();
+    return c;
+  }
+  // Limiar adaptativo (método de Bradley): separa letra e papel mesmo com sombra ou luz desigual
+  function limiarAdaptativo(g, w, h) {
+    const W = w + 1;
+    const integral = new Uint32Array(W * (h + 1));
+    for (let y = 0; y < h; y++) {
+      let linha = 0;
+      for (let x = 0; x < w; x++) { linha += g[y * w + x]; integral[(y + 1) * W + x + 1] = integral[y * W + x + 1] + linha; }
+    }
+    const s = Math.max(12, ((Math.min(w, h) / 16) | 0) >> 1);
+    const t = 0.15;
+    const out = new Uint8ClampedArray(w * h);
+    for (let y = 0; y < h; y++) {
+      const y0 = Math.max(0, y - s), y1 = Math.min(h - 1, y + s);
+      for (let x = 0; x < w; x++) {
+        const x0 = Math.max(0, x - s), x1 = Math.min(w - 1, x + s);
+        const n = (x1 - x0 + 1) * (y1 - y0 + 1);
+        const soma = integral[(y1 + 1) * W + x1 + 1] - integral[y0 * W + x1 + 1] - integral[(y1 + 1) * W + x0] + integral[y0 * W + x0];
+        out[y * w + x] = g[y * w + x] * n < soma * (1 - t) ? 0 : 255;
+      }
+    }
+    return out;
+  }
+  async function prepararImagem(fonte, { binarizar = true } = {}) {
+    const origem = await paraCanvas(fonte);
+    const maior = Math.max(origem.width, origem.height);
+    let escala = 1;
+    if (maior > 2800) escala = 2800 / maior;                              // fotos enormes: reduz (mais rápido)
+    else if (maior < 1800) escala = Math.min(2, 1800 / maior);            // imagens pequenas: amplia
+    const w = Math.max(1, Math.round(origem.width * escala)), h = Math.max(1, Math.round(origem.height * escala));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(origem, 0, 0, w, h);
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const cinza = new Uint8ClampedArray(w * h), hist = new Uint32Array(256);
+    for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+      const g = ((d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000) | 0;
+      cinza[p] = g; hist[g]++;
+    }
+    // estica o contraste ignorando 1% dos tons mais escuros e mais claros
+    const tot = w * h;
+    let acc = 0, lo = 0, hi = 255;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= tot * 0.01) { lo = v; break; } }
+    acc = 0;
+    for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= tot * 0.01) { hi = v; break; } }
+    if (hi - lo < 30) { lo = 0; hi = 255; }
+    const fator = 255 / (hi - lo);
+    for (let p = 0; p < cinza.length; p++) cinza[p] = Math.max(0, Math.min(255, (cinza[p] - lo) * fator));
+    const saida = binarizar ? limiarAdaptativo(cinza, w, h) : cinza;
+    for (let i = 0, p = 0; i < d.length; i += 4, p++) { const v = saida[p]; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    ctx.putImageData(img, 0, 0);
+    return c;
+  }
+  // Limpa ruído típico de leitura automática (linhas de símbolos soltos, hifenização)
+  function limparTextoOcr(t) {
+    return t
+      .replace(/-\n(?=\p{Ll})/gu, "")
+      .split("\n")
+      .map((l) => l.replace(/[ \t]+/g, " ").trim())
+      .filter((l) => {
+        if (!l) return true;
+        const alnum = (l.match(/[\p{L}\p{N}]/gu) || []).length;
+        return alnum >= 2 && alnum / l.length >= 0.3;
+      })
+      .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  async function ocrImagem(fonte, prog, { binarizar = true, faixa = [0.35, 0.95], rotulo = "Reconhecendo as letras..." } = {}) {
+    prog.set(1, 0.03, "Preparando a imagem...");
+    await Leitura.corrida(carregarLib("tesseract"));
+    verificarCancelado();
+    prog.set(1, 0.08, "Melhorando a imagem para a leitura...");
+    const canvas = await prepararImagem(fonte, { binarizar });
+    verificarCancelado();
+    prog.set(1, 0.12, "Preparando o leitor de textos...");
+    ocrAoProgresso = (m) => {
+      if (m.status === "recognizing text") {
+        prog.set(2, faixa[0] + (faixa[1] - faixa[0]) * (m.progress || 0), rotulo);
+      } else if (ETAPAS_OCR[m.status]) {
+        const [a, b] = ETAPAS_OCR[m.status];
+        prog.set(1, a + (b - a) * (m.progress || 0), "Preparando o leitor de textos...");
+      }
+    };
+    const worker = await Leitura.corrida(obterOcr());
+    verificarCancelado();
+    prog.set(2, faixa[0], rotulo);
+    const { data } = await Leitura.corrida(worker.recognize(canvas));
+    return { text: limparTextoOcr(data.text || ""), conf: typeof data.confidence === "number" ? data.confidence : 0 };
+  }
+
+  async function lerPdf(file, prog) {
+    prog.set(1, 0.03, "Preparando o leitor de documentos...");
+    await Leitura.corrida(carregarLib("pdfjs"));
+    verificarCancelado();
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-    let text = "";
+    prog.set(1, 0.1, "Abrindo o documento...");
+    const pdf = await Leitura.corrida(pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise);
+    let texto = "";
     for (let i = 1; i <= pdf.numPages; i++) {
+      verificarCancelado();
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      text += content.items.map((it) => it.str + (it.hasEOL ? "\n" : "")).join(" ") + "\n\n";
+      texto += content.items.map((it) => it.str + (it.hasEOL ? "\n" : "")).join(" ") + "\n\n";
+      prog.set(2, 0.1 + 0.2 * (i / pdf.numPages), `Lendo a página ${i} de ${pdf.numPages}...`);
     }
-    if (text.replace(/\s/g, "").length > 80 * Math.min(pdf.numPages, 3)) return text.trim();
-
-    // PDF escaneado: OCR página a página
-    const pages = Math.min(pdf.numPages, MAX_OCR_PAGES);
-    let ocr = "";
-    for (let i = 1; i <= pages; i++) {
-      status(`Lendo a página ${i} de ${pages}. Documentos escaneados demoram um pouco mais...`);
+    if (texto.replace(/\s/g, "").length > 80 * Math.min(pdf.numPages, 3)) {
+      prog.set(3, 0.97, "Organizando o texto...");
+      return { text: texto.trim(), ocr: false };
+    }
+    // PDF escaneado: leitura página a página
+    const paginas = Math.min(pdf.numPages, MAX_OCR_PAGES);
+    let ocr = "", somaConf = 0;
+    for (let i = 1; i <= paginas; i++) {
+      verificarCancelado();
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
+      const viewport = page.getViewport({ scale: 2.2 });
       const canvas = document.createElement("canvas");
       canvas.width = viewport.width; canvas.height = viewport.height;
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
-      ocr += (await ocrImage(canvas)) + "\n\n";
+      const r = await ocrImagem(canvas, prog, {
+        binarizar: false,
+        faixa: [0.3 + 0.65 * ((i - 1) / paginas), 0.3 + 0.65 * (i / paginas)],
+        rotulo: `Lendo a página ${i} de ${paginas} (documento escaneado)...`,
+      });
+      ocr += r.text + "\n\n";
+      somaConf += r.conf;
     }
-    if (pdf.numPages > pages) ocr += `\n[Apenas as primeiras ${pages} páginas de ${pdf.numPages} foram lidas.]`;
-    return ocr.trim();
+    if (pdf.numPages > paginas) ocr += `\n[Apenas as primeiras ${paginas} páginas de ${pdf.numPages} foram lidas.]`;
+    return { text: ocr.trim(), ocr: true, conf: somaConf / paginas };
   }
 
-  async function extractText(file, status) {
+  async function extrairTexto(file, prog) {
     const e = ext(file.name);
-    if (e === "txt" || e === "md") return file.text();
-    if (e === "docx") { status("Preparando o leitor de documentos..."); await carregarLib("mammoth"); }
-    if (e === "docx") return (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
-    if (e === "pdf") return readPdf(file, status);
+    if (e === "txt" || e === "md") return { text: await file.text(), ocr: false };
+    if (e === "docx") {
+      await carregarLib("mammoth");
+      return { text: (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value, ocr: false };
+    }
+    if (e === "pdf") return lerPdf(file, prog);
     if (["png", "jpg", "jpeg", "webp"].includes(e)) {
-      status("Lendo o texto da foto. Pode levar até 1 minuto...");
-      return ocrImage(file, (p) => status(`Lendo o texto da foto... ${Math.round(p * 100)}%`));
+      const r = await ocrImagem(file, prog);
+      prog.set(3, 0.97, "Organizando o texto...");
+      return { ...r, ocr: true };
     }
     throw new Error("unsupported");
   }
 
   async function addFiles(fileList) {
     if (state.readonly) return;
+    const validos = [];
     for (const file of fileList) {
-      if (state.pending.length >= 5) { showBanner("Máximo de 5 arquivos por mensagem."); break; }
+      if (state.pending.length + validos.length >= MAX_FILES) { showBanner(`Máximo de ${MAX_FILES} arquivos por mensagem.`); break; }
       if (file.size > MAX_BYTES) { showBanner(`"${file.name}" passa de ${MAX_FILE_MB} MB.`); continue; }
-      setBusy(true);
-      try {
-        const text = (await extractText(file, (s) => showBanner(s, false))).trim();
-        if (!text) { showBanner(`Não consegui ler o texto de "${file.name}". Tire uma nova foto com mais luz, mostrando a página inteira, ou cole o texto na caixa de mensagem.`); continue; }
-        state.pending.push({ name: file.name, text, file, mime: file.type || mimePorExtensao(file.name) });
-        showBanner("");
-      } catch (err) {
-        showBanner(err.message === "unsupported"
-          ? `Formato não suportado: ${file.name}. Use PDF, imagem, Word (.docx) ou texto.`
-          : err.message === "lib"
-            ? "Não consegui carregar o leitor de arquivos. Verifique sua internet e tente de novo."
-            : `Não consegui ler "${file.name}". Tente outro arquivo, uma foto mais nítida ou cole o texto.`);
-      } finally {
-        setBusy(false);
-      }
+      validos.push(file);
     }
+    if (!validos.length) return;
+
+    const pesado = validos.some((f) => ["pdf", "png", "jpg", "jpeg", "webp"].includes(ext(f.name)));
+    setBusy(true);
+    if (pesado) Leitura.abrir(validos.length);
+    let lidos = 0, baixaQualidade = 0, cancelou = false;
+    try {
+      for (let i = 0; i < validos.length; i++) {
+        if (Leitura.cancelado) { cancelou = true; break; }
+        const file = validos[i];
+        const prog = { set: (etapa, frac, msg) => Leitura.atualizar({ i: i + 1, nome: file.name, etapa, frac, msg }) };
+        prog.set(1, 0.01, "Preparando...");
+        try {
+          const r = await extrairTexto(file, prog);
+          const texto = (r.text || "").trim();
+          if (texto.replace(/\s/g, "").length < (r.ocr ? 25 : 1)) {
+            showBanner(`Não consegui ler o texto de "${file.name}". Tire uma nova foto com mais luz, mostrando a página inteira, ou cole o texto na caixa de mensagem.`);
+            continue;
+          }
+          if (r.ocr && r.conf < 55) baixaQualidade++;
+          state.pending.push({
+            name: file.name, file, mime: file.type || mimePorExtensao(file.name),
+            text: r.ocr ? CABECALHO_OCR + texto : texto,
+            thumb: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
+          });
+          lidos++;
+        } catch (err) {
+          if (err.message === "cancelado") { cancelou = true; break; }
+          showBanner(err.message === "unsupported"
+            ? `Formato não suportado: ${file.name}. Use PDF, imagem, Word (.docx) ou texto.`
+            : err.message === "lib"
+              ? "Não consegui carregar o leitor de arquivos. Verifique sua internet e tente de novo."
+              : `Não consegui ler "${file.name}". Tente outro arquivo, uma foto mais nítida ou cole o texto.`);
+        }
+      }
+      if (pesado && !cancelou) await Leitura.concluir();
+    } finally {
+      await encerrarOcr();
+      Leitura.fechar();
+      setBusy(false);
+      renderPending();
+    }
+    if (cancelou) showBanner("Leitura cancelada.", false);
+    else if (lidos && baixaQualidade) showBanner("A leitura de algumas fotos ficou com qualidade baixa. Se a explicação vier estranha, tire outra foto com mais luz e sem sombra.", false);
+    else if (lidos) showBanner("");
+  }
+
+  const limparThumbs = () => state.pending.forEach((f) => f.thumb && URL.revokeObjectURL(f.thumb));
+  function moverPendente(i, delta) {
+    const j = i + delta;
+    if (j < 0 || j >= state.pending.length) return;
+    [state.pending[i], state.pending[j]] = [state.pending[j], state.pending[i]];
     renderPending();
   }
   function renderPending() {
     el.files.innerHTML = "";
     el.btnSend.classList.toggle("pulsa", state.pending.length > 0);
+    const varios = state.pending.length > 1;
     state.pending.forEach((f, i) => {
       const chip = document.createElement("span");
       chip.className = "file-chip";
-      chip.innerHTML = `${ICON.file}${esc(f.name)}<button type="button" class="x" aria-label="Remover ${esc(f.name)}">${ICON.close}</button>`;
-      chip.querySelector(".x").onclick = () => { state.pending.splice(i, 1); renderPending(); };
+      chip.innerHTML =
+        (varios ? `<span class="file-num">${i + 1}</span>` : "") +
+        (f.thumb ? `<img class="file-thumb" src="${f.thumb}" alt="">` : ICON.file) +
+        `<span class="file-nome">${esc(f.name)}</span>` +
+        (varios
+          ? `<button type="button" class="mv" data-d="-1" aria-label="Mover ${esc(f.name)} para antes" ${i === 0 ? "disabled" : ""}>${ICON.esq}</button>` +
+            `<button type="button" class="mv" data-d="1" aria-label="Mover ${esc(f.name)} para depois" ${i === state.pending.length - 1 ? "disabled" : ""}>${ICON.dir}</button>`
+          : "") +
+        `<button type="button" class="x" aria-label="Remover ${esc(f.name)}">${ICON.close}</button>`;
+      chip.querySelectorAll(".mv").forEach((b) => { b.onclick = () => moverPendente(i, Number(b.dataset.d)); });
+      chip.querySelector(".x").onclick = () => {
+        if (f.thumb) URL.revokeObjectURL(f.thumb);
+        state.pending.splice(i, 1);
+        renderPending();
+      };
       el.files.appendChild(chip);
     });
     if (state.pending.length) {
       const dica = document.createElement("span");
       dica.className = "hint-enviar";
-      dica.textContent = "Pronto! Agora toque na seta azul para enviar.";
+      dica.textContent = varios
+        ? `Pronto! ${state.pending.length} arquivos, na ordem mostrada. Toque na seta azul para enviar.`
+        : "Pronto! Agora toque na seta azul para enviar.";
       el.files.appendChild(dica);
     }
+  }
+
+  // Título da conversa quando a pessoa envia só arquivos
+  function tituloDosArquivos(lista) {
+    const n = lista.length;
+    if (lista.every((f) => /^foto-/i.test(f.name))) return n > 1 ? `Documento fotografado (${n} fotos)` : "Documento fotografado";
+    const base = cleanTitle(lista[0].name);
+    return n > 1 ? `${base} e mais ${n - 1}`.slice(0, 60) : base;
   }
 
   // ---------- envio ----------
@@ -437,7 +717,7 @@
     try {
       let convId = state.currentId;
       if (!convId) {
-        const title = cleanTitle(content || state.pending[0].name);
+        const title = content ? cleanTitle(content) : tituloDosArquivos(state.pending);
         // No modo atendente a origem é 'atendente'; o nome do atendente é preenchido pelo banco.
         const { data, error } = await sb.from("conversations")
           .insert({ title, origem: MODO === "atendente" ? "atendente" : "publico" })
@@ -466,6 +746,7 @@
       addMessage("user", content, attachments);
       el.input.value = "";
       autoGrow();
+      limparThumbs();
       state.pending = [];
       renderPending();
 
@@ -617,7 +898,7 @@
 
   // ---------- início ----------
   // API usada pelos módulos extras (atendente.js e codigo.js)
-  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv, send, addFiles, copyButton, renderMd, enviarTexto, autoGrow };
+  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv, send, addFiles, copyButton, renderMd, enviarTexto, autoGrow, MAX_FILES };
 
   // No modo atendente, quem inicia é o atendente.js (depois do login).
   if (MODO !== "atendente") {

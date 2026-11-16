@@ -125,29 +125,45 @@
     </div>
   </dialog>
 
-  <dialog class="modal" id="dlgDicasFoto" aria-labelledby="dlgDicasTitulo">
-    <div class="modal-body">
-      <h2 id="dlgDicasTitulo">Antes de tirar a foto</h2>
-      <p class="dicas-foto dicas-lista"><span>Mostre a página inteira</span><span>Com boa luz</span><span>Sem sombra</span></p>
-      <label class="check dicas-check"><input type="checkbox" id="chkDicasFoto"><span>Não mostrar este aviso de novo</span></label>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="btnDicasCancelar">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="btnDicasOk">Abrir a câmera</button>
+  <dialog class="modal modal-camera" id="dlgCamera" aria-labelledby="dlgCameraTitulo">
+    <div class="camera-box">
+      <h2 id="dlgCameraTitulo">Tirar foto do documento</h2>
+      <div class="camera-palco">
+        <video id="camVideo" class="camera-video" autoplay playsinline muted></video>
+        <div class="camera-moldura" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="camera-flash" id="camFlash" aria-hidden="true"></div>
+      </div>
+      <p class="camera-dica" id="camDica" aria-live="polite">Mostre a página inteira, com boa luz e sem sombra.</p>
+      <div class="camera-tira" id="camTira" hidden aria-label="Fotos tiradas"></div>
+      <div class="camera-acoes">
+        <button type="button" class="btn btn-secondary" id="btnCamCancelar">Cancelar</button>
+        <button type="button" class="btn btn-obturador" id="btnCamTirar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg><span>Tirar foto</span></button>
+        <button type="button" class="btn btn-primary" id="btnCamConcluir" disabled>Concluir</button>
       </div>
     </div>
   </dialog>
 
-  <dialog class="modal modal-camera" id="dlgCamera" aria-labelledby="dlgCameraTitulo">
-    <div class="modal-body">
-      <h2 id="dlgCameraTitulo">Tirar foto do documento</h2>
-      <p class="dicas-foto dicas-lista"><span>Mostre a página inteira</span><span>Com boa luz</span><span>Sem sombra</span></p>
-      <video id="camVideo" class="camera-video" autoplay playsinline muted></video>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="btnCamCancelar">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="btnCamTirar">Tirar foto</button>
+  <!-- Painel de leitura: bloqueia a tela enquanto o texto do arquivo é lido -->
+  <div class="leitura" id="leitura" hidden role="alertdialog" aria-modal="true" aria-labelledby="leituraTitulo" aria-describedby="leituraEtapa">
+    <div class="leitura-card">
+      <div class="leitura-anim" aria-hidden="true">
+        <svg viewBox="0 0 64 80"><path d="M10 4h31l13 13v59H10z"/><path d="M41 4v13h13"/><path d="M19 30h26M19 40h26M19 50h26M19 60h16"/></svg>
+        <span class="scan"></span>
       </div>
+      <h2 id="leituraTitulo">Lendo o seu documento</h2>
+      <p class="leitura-arq" id="leituraArq"></p>
+      <div class="leitura-barra" id="leituraBarra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+      <p class="leitura-pct" id="leituraPct">0%</p>
+      <p class="leitura-etapa" id="leituraEtapa" aria-live="polite">Preparando...</p>
+      <ol class="leitura-passos">
+        <li>Preparar a imagem</li>
+        <li>Reconhecer as letras</li>
+        <li>Organizar o texto</li>
+      </ol>
+      <p class="leitura-dica" id="leituraDica"></p>
+      <button type="button" class="btn btn-secondary" id="leituraCancelar">Cancelar leitura</button>
     </div>
-  </dialog>
+  </div>
 
   <div class="dropzone" id="dropzone" hidden><div>Solte o arquivo para anexar</div></div>
 

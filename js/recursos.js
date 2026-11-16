@@ -232,81 +232,111 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
   }
 
   // =====================================================================
-  // 7) Atalhos da tela inicial: tirar foto, escolher arquivo, digitar
+  // 7) Atalhos da tela inicial e câmera com várias fotos
   // =====================================================================
-  const camera = $("fileCamera");
+  const camera = $("fileCamera");   // câmera nativa: só como reserva
   if (camera) camera.onchange = () => { App.addFiles([...camera.files]); camera.value = ""; };
-  // Celular/tablet: câmera nativa (melhor qualidade). Computador: janela com a webcam.
-  const ehToque = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-  const dlgCam = $("dlgCamera"), camVideo = $("camVideo");
-  let camStream = null;
-  const fecharCamera = () => {
-    if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; }
-    if (camVideo) camVideo.srcObject = null;
-    if (dlgCam && dlgCam.open) dlgCam.close();
-  };
-  async function abrirWebcam() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !dlgCam) {
-      showBanner("Este navegador não consegue abrir a câmera. Escolha uma foto do computador.");
-      el.fileInput.click();
-      return;
-    }
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      });
-      camVideo.srcObject = camStream;
-      dlgCam.showModal();
-    } catch (e) {
-      const bloqueada = e && (e.name === "NotAllowedError" || e.name === "SecurityError");
-      showBanner(bloqueada
-        ? "A câmera está bloqueada. Permita o uso da câmera no navegador ou escolha uma foto do computador."
-        : "Não encontrei uma câmera neste aparelho. Escolha uma foto do computador.");
-      el.fileInput.click();
-    }
-  }
-  if (dlgCam) {
-    $("btnCamCancelar").onclick = fecharCamera;
-    dlgCam.addEventListener("close", fecharCamera);
-    $("btnCamTirar").onclick = () => {
-      if (!camVideo.videoWidth) return;
-      const c = document.createElement("canvas");
-      c.width = camVideo.videoWidth; c.height = camVideo.videoHeight;
-      c.getContext("2d").drawImage(camVideo, 0, 0);
-      c.toBlob((blob) => {
-        if (blob) {
-          const f = new File([blob], "foto-documento-" + new Date().toISOString().slice(0, 10) + ".jpg", { type: "image/jpeg" });
-          App.addFiles([f]);
-        }
-        fecharCamera();
-      }, "image/jpeg", 0.92);
-    };
-  }
-  // Celular: mostra as orientações e depois abre a câmera (a pessoa pode pedir para não ver de novo)
-  const dlgDicas = $("dlgDicasFoto");
-  function abrirCameraDoCelular() {
-    if (!camera) return;
-    if (!dlgDicas || ler("dicasFotoOcultas") === "1") { camera.click(); return; }
-    $("chkDicasFoto").checked = false;
-    dlgDicas.showModal();
-  }
-  if (dlgDicas) {
-    $("btnDicasCancelar").onclick = () => dlgDicas.close();
-    $("btnDicasOk").onclick = () => {
-      if ($("chkDicasFoto").checked) guardar("dicasFotoOcultas", "1");
-      dlgDicas.close();
-      camera.click();            // dentro do clique: o navegador permite abrir a câmera
-    };
-    dlgDicas.addEventListener("click", (e) => { if (e.target === dlgDicas) dlgDicas.close(); });
-  }
-  if ($("btnFoto")) $("btnFoto").onclick = () => (ehToque ? abrirCameraDoCelular() : abrirWebcam());
   if ($("btnArquivo")) $("btnArquivo").onclick = () => el.fileInput.click();
   if ($("btnDigitar")) $("btnDigitar").onclick = () => {
     el.input.focus();
     el.input.scrollIntoView({ block: "center", behavior: "smooth" });
   };
 
+  const ehToque = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  const dlgCam = $("dlgCamera"), camVideo = $("camVideo"), camTira = $("camTira"), camDica = $("camDica");
+  const btnTirar = $("btnCamTirar"), btnConcluir = $("btnCamConcluir"), camFlash = $("camFlash");
+  let camStream = null;
+  let fotos = [];                    // { blob, url } na ordem em que foram tiradas
+
+  const reservaCamera = () => (ehToque && camera ? camera.click() : el.fileInput.click());
+
+  function atualizarCamera() {
+    const espaco = Math.max(0, (App.MAX_FILES || 10) - state.pending.length);
+    camTira.innerHTML = "";
+    fotos.forEach((f, i) => {
+      const it = document.createElement("div");
+      it.className = "cam-mini";
+      it.innerHTML = `<img src="${f.url}" alt="Foto ${i + 1}"><span class="n">${i + 1}</span>` +
+        `<button type="button" aria-label="Apagar a foto ${i + 1}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>`;
+      it.querySelector("button").onclick = () => { URL.revokeObjectURL(f.url); fotos.splice(i, 1); atualizarCamera(); };
+      camTira.appendChild(it);
+    });
+    camTira.hidden = fotos.length === 0;
+    camTira.scrollLeft = camTira.scrollWidth;
+    btnConcluir.disabled = fotos.length === 0;
+    btnConcluir.textContent = fotos.length ? `Concluir (${fotos.length} foto${fotos.length > 1 ? "s" : ""})` : "Concluir";
+    btnTirar.querySelector("span").textContent = fotos.length ? "Tirar outra foto" : "Tirar foto";
+    btnTirar.disabled = fotos.length >= espaco;
+    camDica.textContent = fotos.length >= espaco && fotos.length
+      ? "Limite de fotos atingido. Toque em Concluir."
+      : fotos.length
+        ? `Foto ${fotos.length} salva. Vire a página e toque em Tirar outra foto, ou em Concluir.`
+        : "Mostre a página inteira, com boa luz e sem sombra.";
+  }
+  function fecharCamera() {
+    if (camStream) { camStream.getTracks().forEach((t) => t.stop()); camStream = null; }
+    if (camVideo) camVideo.srcObject = null;
+    fotos.forEach((f) => URL.revokeObjectURL(f.url));
+    fotos = [];
+    if (dlgCam && dlgCam.open) dlgCam.close();
+  }
+  function cancelarCamera() {
+    if (fotos.length && !confirm(`Descartar ${fotos.length === 1 ? "a foto tirada" : "as " + fotos.length + " fotos tiradas"}?`)) return;
+    fecharCamera();
+  }
+  async function abrirCamera() {
+    if (!dlgCam || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showBanner("Este navegador não consegue abrir a câmera. Escolha uma foto do aparelho.");
+      reservaCamera();
+      return;
+    }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: false,
+      });
+      camVideo.srcObject = camStream;
+      try { await camStream.getVideoTracks()[0].applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch {}
+      fotos = [];
+      atualizarCamera();
+      dlgCam.showModal();
+      camVideo.play().catch(() => {});
+    } catch (e) {
+      fecharCamera();
+      const bloqueada = e && (e.name === "NotAllowedError" || e.name === "SecurityError");
+      showBanner(bloqueada
+        ? "A câmera está bloqueada. Permita o uso da câmera no navegador ou escolha uma foto do aparelho."
+        : "Não encontrei uma câmera. Escolha uma foto do aparelho.");
+      reservaCamera();
+    }
+  }
+  if (dlgCam) {
+    $("btnCamCancelar").onclick = cancelarCamera;
+    dlgCam.addEventListener("cancel", (e) => { e.preventDefault(); cancelarCamera(); });   // tecla Esc
+    dlgCam.addEventListener("close", () => { if (camStream) fecharCamera(); });
+    btnTirar.onclick = () => {
+      if (!camVideo.videoWidth) return;
+      const c = document.createElement("canvas");
+      c.width = camVideo.videoWidth; c.height = camVideo.videoHeight;
+      c.getContext("2d").drawImage(camVideo, 0, 0);
+      camFlash.classList.remove("on"); void camFlash.offsetWidth; camFlash.classList.add("on");
+      if (navigator.vibrate) navigator.vibrate(30);
+      c.toBlob((blob) => {
+        if (!blob) return;
+        fotos.push({ blob, url: URL.createObjectURL(blob) });
+        atualizarCamera();
+      }, "image/jpeg", 0.92);
+    };
+    btnConcluir.onclick = () => {
+      const base = state.pending.length;
+      const arquivos = fotos.map((f, i) => new File([f.blob], `foto-${base + i + 1}.jpg`, { type: "image/jpeg" }));
+      fecharCamera();
+      App.addFiles(arquivos);        // lê todas, em ordem, e anexa tudo junto
+    };
+  }
+  if ($("btnFoto")) $("btnFoto").onclick = abrirCamera;
+
+  // =====================================================================
   // =====================================================================
   // 8) Montagem do que aparece embaixo de cada resposta
   // =====================================================================
