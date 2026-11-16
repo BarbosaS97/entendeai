@@ -230,6 +230,15 @@
     if (state.currentId === id) newConv(); else renderConvs();
   }
 
+  // Lembrete de contato do atendimento (aparece só abaixo da última resposta; não no modo atendente)
+  function contatoLembrete() {
+    if (MODO === "atendente") return null;
+    const d = document.createElement("div");
+    d.className = "msg-contato";
+    d.innerHTML = 'Ficou com dúvida? Fale com o atendimento: <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a>';
+    return d;
+  }
+
   // ---------- mensagens ----------
   function addMessage(role, content, attachments = []) {
     el.welcome.hidden = true;
@@ -252,6 +261,7 @@
     } else {
       wrap.innerHTML = `<div class="bubble md">${renderMd(content)}</div>`;
       wrap.appendChild(copyButton(() => content));
+      const lembrete = contatoLembrete(); if (lembrete) wrap.appendChild(lembrete);
     }
     el.messages.appendChild(wrap);
     return wrap;
@@ -440,7 +450,10 @@
       const idx = state.convs.findIndex((c) => c.id === convId);
       if (idx > 0) state.convs.unshift(...state.convs.splice(idx, 1));
       renderConvs();
-      if (full) assistantWrap.appendChild(copyButton(() => full));
+      if (full) {
+        assistantWrap.appendChild(copyButton(() => full));
+        const lembrete = contatoLembrete(); if (lembrete) assistantWrap.appendChild(lembrete);
+      }
     } catch (err) {
       if (assistantWrap) assistantWrap.remove();
       showBanner(err.message || "Algo deu errado.");

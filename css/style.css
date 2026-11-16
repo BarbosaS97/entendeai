@@ -549,3 +549,20 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   .disclaimer { display: block; }
   .welcome h2 { font-size: 24px; }
 }
+
+/* ---------- Contato do atendimento ---------- */
+.contato-card {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 10px; padding: 12px 12px 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 13px;
+}
+.contato-card strong { font-size: 13.5px; font-weight: 600; }
+.contato-sub { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.contato-card a { display: flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; padding: 3px 0; }
+.contato-card a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.contato-card svg { width: 15px; height: 15px; color: var(--muted); }
+.contato-inline { margin: 12px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.contato-inline a, .msg-contato a { color: var(--accent); text-underline-offset: 3px; }
+.msg-contato { display: none; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--muted); line-height: 1.55; }
+.messages > .msg.assistant:last-child .msg-contato { display: block; }
+@media (max-width: 800px) { .contato-inline { font-size: 12.5px; } }
+.contato-inline a, .msg-contato a { white-space: nowrap; }
