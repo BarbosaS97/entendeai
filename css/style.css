@@ -1,36 +1,23 @@
 :root {
-  --bg: #faf9f6;
+  color-scheme: light;
+  /* Paleta da logo EntendAI: azul #004ac8, ciano #01ecfe, verde #09ce1e / #4cec13 */
+  --bg: #ffffff;
   --panel: #ffffff;
-  --side: #f2f0ea;
-  --text: #1d2230;
-  --muted: #6a7080;
-  --line: #e5e1d8;
-  --accent: #1f3a5f;
-  --accent-hover: #162b48;
-  --accent-soft: #e9eef5;
+  --side: #f6f8fc;
+  --text: #0f1a33;
+  --muted: #5a6682;
+  --line: #dbe3f0;
+  --accent: #0a4fc4;
+  --accent-hover: #083c9a;
+  --accent-soft: #e5edfc;
+  --green: #12a82a;
+  --cyan: #0aa9c9;
   --warn-bg: #fbf3e2;
   --warn-text: #6b4a0b;
   --err-bg: #fbeaea;
   --err-text: #8a2323;
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
   --sans: "Inter", "Segoe UI", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171d;
-    --panel: #1b1f27;
-    --side: #101318;
-    --text: #e6e8ed;
-    --muted: #8f96a6;
-    --line: #2a2f3a;
-    --accent: #8fb0dc;
-    --accent-hover: #a9c4e8;
-    --accent-soft: #222c3b;
-    --warn-bg: #2f2813;
-    --warn-text: #e8cf8f;
-    --err-bg: #34191a;
-    --err-text: #f1aaaa;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -57,8 +44,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   display: flex; flex-direction: column; padding: 20px 12px 14px;
   transition: margin-left .22s ease;
 }
-.brand { font-family: var(--serif); font-size: 25px; font-weight: 600; letter-spacing: -.01em; padding: 2px 10px 22px; white-space: nowrap; }
-.brand span { color: var(--accent); font-weight: 500; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 25px; font-weight: 600; letter-spacing: -.01em; padding: 0 6px 20px; white-space: nowrap; color: var(--accent); }
+.brand-nome b { color: var(--green); font-weight: 600; }
 .btn-new {
   display: flex; align-items: center; gap: 10px; width: 100%;
   background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
@@ -153,7 +140,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   padding: 11px 16px; max-width: 85%; white-space: pre-wrap; overflow-wrap: anywhere;
   max-height: 340px; overflow-y: auto;
 }
-.msg.assistant { padding-left: 18px; border-left: 2px solid var(--accent); }
+.msg.assistant { padding-left: 18px; border-left: 2px solid var(--accent); border-image: linear-gradient(to bottom, var(--accent), var(--green)) 1; }
 .msg.assistant .bubble { overflow-wrap: anywhere; }
 .msg-att { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; justify-content: flex-end; }
 .att {
@@ -465,3 +452,46 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .att-file button:hover { background: var(--accent-soft); color: var(--accent); }
 .att-file .att-open:hover span { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 800px) { .att-file .att-open { max-width: 200px; } .att-file button { padding: 7px 10px; } }
+
+/* ---------- Identidade visual (logo) ---------- */
+/* Detalhes na cor da logo */
+.starter:hover { border-color: color-mix(in srgb, var(--cyan) 50%, var(--line)); }
+.btn-primary, .send { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 82%, var(--cyan))); }
+.btn-primary:hover:not(:disabled), .send:hover:not(:disabled) { background: var(--accent-hover); }
+.code-display span { color: var(--accent); }
+
+/* ---------- Logo completa (substitui o nome em texto) ---------- */
+.logo-banner { display: block; width: 100%; height: auto; border-radius: 12px; }
+.brand { display: block; padding: 0 2px 16px; }
+.brand .brand-tag { display: table; margin: 10px 0 0 2px; }
+.welcome-logo { display: block; margin-bottom: 20px; }
+.welcome-logo .logo-banner { width: min(360px, 100%); border-radius: 14px; }
+.login-logos { display: block; margin-bottom: 20px; }
+.login-logos .logo-banner { border-radius: 12px; }
+@media (max-width: 800px) {
+  .welcome-logo .logo-banner { width: min(300px, 100%); }
+}
+
+/* ---------- Logo oficial (PNG sem fundo, sem alterações) ---------- */
+.logo-banner { border-radius: 0; background: transparent; }
+.brand .logo-banner { width: 210px; max-width: 100%; }
+
+/* Tela inicial: só a logo da Justiça Federal do DF (a do EntendAI fica na barra lateral) */
+.welcome-logo .logo-banner { width: min(280px, 100%); }
+@media (max-width: 800px) { .welcome-logo .logo-banner { width: min(230px, 100%); } }
+
+/* Logo da barra lateral centralizada */
+.brand { padding: 8px 0 18px; text-align: center; }
+.brand .logo-banner { width: 220px; margin: 0 auto; }
+.brand .brand-tag { margin: 10px auto 0; }
+
+/* Cartões de tema com cores leves (paleta da logo) */
+.starters li:nth-child(1) .starter { --t-bg: #eaf1fe; --t-bd: #cddffb; --t-fg: #0a4fc4; --t-hv: #dce8fd; }  /* azul */
+.starters li:nth-child(2) .starter { --t-bg: #eaf8ec; --t-bd: #c8ebcf; --t-fg: #0e8a24; --t-hv: #dbf1df; }  /* verde */
+.starters li:nth-child(3) .starter { --t-bg: #e6f7fb; --t-bd: #bfe6ef; --t-fg: #0b87a3; --t-hv: #d5f0f6; }  /* ciano */
+.starters li:nth-child(4) .starter { --t-bg: #eeedfc; --t-bd: #d5d2f7; --t-fg: #4a3fc0; --t-hv: #e2dff9; }  /* índigo */
+.starters .starter { background: var(--t-bg); border-color: var(--t-bd); }
+.starters .starter strong { color: var(--t-fg); }
+.starters .starter::after { border-color: var(--t-fg); opacity: .7; }
+.starters .starter:hover { background: var(--t-hv); border-color: var(--t-fg); }
+.starters .starter:hover::after { opacity: 1; }

@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#faf9f6" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#14171d" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
   <title>EntendAI – Direito em linguagem simples</title>
   <meta name="description" content="Cole um texto ou envie um documento jurídico e receba uma explicação simples e clara.">
+  <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-64.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
@@ -15,7 +17,7 @@
 <body>
   <div class="app" id="app">
     <aside class="sidebar" id="sidebar" aria-label="Conversas">
-      <div class="brand">Entend<span>AI</span></div>
+      <div class="brand"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
       <button class="btn-new" id="btnNew">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
         Nova conversa
@@ -44,6 +46,7 @@
 
       <section class="chat" id="chat" aria-live="polite">
         <div class="welcome" id="welcome">
+          <div class="welcome-logo"><img class="logo-banner" src="img/logo-jf-df.webp" alt="Justiça Federal – Distrito Federal" width="1677" height="571"></div>
           <p class="eyebrow">Assistente de leitura jurídica</p>
           <h2>Entenda seu processo, sem complicação.</h2>
           <p class="lead">Escolha um tema abaixo ou use a caixa de mensagem para digitar, colar um texto ou anexar um documento (PDF, foto, Word).</p>

@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#faf9f6" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#14171d" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
   <title>EntendAI – Atendimento</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-64.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
@@ -17,7 +19,7 @@
   <!-- Login do atendente: a senha é validada no servidor (Edge Function), nunca aqui -->
   <section class="login" id="login">
     <form class="login-card" id="formLogin" autocomplete="off">
-      <div class="brand brand-center">Entend<span>AI</span></div>
+      <div class="login-logos"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
       <p class="eyebrow">Área do atendimento</p>
       <p class="modal-text">Acesso restrito à equipe. Informe seu nome e a senha do setor.</p>
       <label class="field">
@@ -35,7 +37,7 @@
 
   <div class="app" id="app" hidden>
     <aside class="sidebar" id="sidebar" aria-label="Conversas">
-      <div class="brand">Entend<span>AI</span><em class="brand-tag">Atendimento</em></div>
+      <div class="brand"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"><em class="brand-tag">Atendimento</em></div>
       <button class="btn-new" id="btnNew">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
         Nova conversa
