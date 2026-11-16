@@ -836,3 +836,8 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 
 /* Ao fixar o início da resposta no topo, deixa uma folga acima */
 .messages > .msg { scroll-margin-top: 14px; }
+
+/* Painel de envio: anel girando (reaproveita o cartão do painel de leitura) */
+.envio-spin { width: 54px; height: 54px; margin: 2px auto 14px; border-radius: 50%; border: 5px solid var(--accent-soft); border-top-color: var(--accent); border-right-color: var(--green); animation: gira 0.9s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .envio-spin { animation-duration: 3s !important; } }

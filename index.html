@@ -180,6 +180,18 @@
     </div>
   </div>
 
+  <!-- Painel de envio: aparece ao enviar arquivos (evita parecer que travou) -->
+  <div class="leitura" id="envioPainel" hidden role="alertdialog" aria-modal="true" aria-labelledby="envioTitulo" aria-describedby="envioEtapa">
+    <div class="leitura-card">
+      <div class="envio-spin" aria-hidden="true"></div>
+      <h2 id="envioTitulo">Enviando seus arquivos</h2>
+      <p class="leitura-arq" id="envioArq"></p>
+      <div class="leitura-barra"><i id="envioBarra"></i></div>
+      <p class="leitura-etapa" id="envioEtapa" aria-live="polite">Preparando o envio...</p>
+      <p class="leitura-dica">Não feche esta página. Logo em seguida a explicação começa a aparecer.</p>
+    </div>
+  </div>
+
   <div class="dropzone" id="dropzone" hidden><div>Solte o arquivo para anexar</div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>

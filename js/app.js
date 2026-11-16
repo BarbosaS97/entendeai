@@ -700,6 +700,39 @@
     return n > 1 ? `${base} e mais ${n - 1}`.slice(0, 60) : base;
   }
 
+  // Painel "Enviando seus arquivos": mostra o andamento do envio (upload) e bloqueia a tela
+  const Envio = (() => {
+    const raiz = $("envioPainel");
+    if (!raiz) return { abrir() {}, atualizar() {}, fechar() {} };
+    const barra = $("envioBarra"), etapa = $("envioEtapa"), arq = $("envioArq");
+    let aberto = false;
+    return {
+      abrir() {
+        aberto = true;
+        barra.style.width = "6%"; etapa.textContent = "Preparando o envio..."; arq.textContent = "";
+        raiz.hidden = false;
+        el.app.inert = true;
+      },
+      atualizar(pct, msg, nome) {
+        if (!aberto) return;
+        barra.style.width = Math.max(6, Math.min(100, pct)) + "%";
+        if (msg) etapa.textContent = msg;
+        if (nome !== undefined) arq.textContent = nome;
+      },
+      fechar() { aberto = false; raiz.hidden = true; el.app.inert = false; },
+    };
+  })();
+
+  // Executa fn em todos os itens com no máximo "limite" ao mesmo tempo; o resultado mantém a ordem original
+  async function paraleloLimitado(itens, limite, fn) {
+    const res = new Array(itens.length);
+    let prox = 0;
+    await Promise.all(Array.from({ length: Math.min(limite, itens.length) }, async () => {
+      while (prox < itens.length) { const i = prox++; res[i] = await fn(itens[i], i); }
+    }));
+    return res;
+  }
+
   // ---------- envio ----------
   async function send() {
     if (state.busy || state.readonly) return;
@@ -711,6 +744,7 @@
     }
     setBusy(true);
     showBanner("");
+    if (state.pending.length) Envio.abrir();      // feedback imediato: o envio dos arquivos pode demorar
 
     let assistantWrap = null;
     let timersEspera = [];
@@ -744,19 +778,26 @@
       }
 
       // Guarda o arquivo original (para abrir/baixar depois). Se falhar, segue só com o texto.
-      const attachments = [];
+      // Envia até 3 por vez e mostra o andamento; a ordem dos anexos é mantida.
       let falhouGuardar = false;
-      for (const f of state.pending) {
+      const totalArq = state.pending.length;
+      let enviados = 0;
+      Envio.atualizar(10, totalArq ? "Conversa pronta. Enviando os arquivos..." : "");
+      const attachments = await paraleloLimitado(state.pending, 3, async (f) => {
         const a = { name: f.name, text: f.text };
         const path = `${convId}/${crypto.randomUUID()}-${safeName(f.name)}`;
         const { error } = await sb.storage.from("documentos").upload(path, f.file, { contentType: f.mime });
         if (error) { falhouGuardar = true; console.warn("upload", error.message); }
         else { a.path = path; a.mime = f.mime; a.size = f.file.size; }
-        attachments.push(a);
-      }
+        enviados++;
+        Envio.atualizar(10 + (80 * enviados) / totalArq, `Enviando arquivo ${enviados} de ${totalArq}...`, f.name);
+        return a;
+      });
       if (falhouGuardar) showBanner("A análise foi feita, mas o arquivo original não pôde ser guardado para download.", false);
+      Envio.atualizar(96, "Iniciando a conversa...");
 
       addMessage("user", content, attachments);
+      Envio.fechar();
       el.input.value = "";
       autoGrow();
       limparThumbs();
@@ -834,6 +875,7 @@
       if (assistantWrap) assistantWrap.remove();
       showBanner(erroAmigavel(err));
     } finally {
+      Envio.fechar();
       EVENTOS_ROLAGEM.forEach((ev) => el.chat.removeEventListener(ev, aoRolar));
       setBusy(false);
       el.input.focus();
