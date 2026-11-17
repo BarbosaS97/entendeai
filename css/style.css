@@ -1270,3 +1270,10 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 .modal-aval .modal-body { overflow-x: hidden; }
 .conv-texto { width: 100%; }
 @media (max-width: 560px) { .conv-texto textarea { min-height: 170px; } .conv-link { flex-wrap: wrap; } }
+
+.conv-cod { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+.conv-cod[hidden] { display: none; }
+.conv-cod .check { margin: 0; }
+.conv-cod-n { font-size: 20px; letter-spacing: .18em; color: var(--accent); }
+.conv-cod small { color: var(--muted); }
+.conv-cod-txt { color: var(--text); }

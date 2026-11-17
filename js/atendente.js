@@ -116,6 +116,7 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-danger" id="compRevogar">Revogar</button>
         <button type="button" class="btn btn-secondary" id="compCopiar">Copiar código</button>
+        <button type="button" class="btn btn-secondary" id="compMensagem">Mensagem com o código</button>
         <button type="button" class="btn btn-primary" id="compFechar">Fechar</button>
       </div>`;
     $("compFechar").onclick = () => dlg.close();
@@ -123,6 +124,7 @@
       try { await navigator.clipboard.writeText(s.codigo); e.target.textContent = "Copiado"; setTimeout(() => (e.target.textContent = "Copiar código"), 1500); } catch {}
     };
     $("compRevogar").onclick = revogar;
+    $("compMensagem").onclick = () => { dlg.close(); abrirConvidar(); };
   }
 
   function erroModal(msg) { const el = $("compErro"); if (el) { el.textContent = msg; el.hidden = !msg; } }
@@ -249,14 +251,18 @@
   // ---------- mensagem padrão para o atendido (link + QR code) ----------
   const dlgConv = $("dlgConvidar");
   const linkSistema = () => new URL("./", location.href).href;     // página do atendido (raiz do site)
-  const msgPadrao = (link) =>
+  const msgPadrao = (link, cod) =>
     "Olá! Aqui é do atendimento da Justiça Federal no Distrito Federal.\n\n" +
     "Para ajudar você a entender os documentos do seu processo em linguagem simples, use o EntendAI:\n" +
     link + "\n\n" +
-    "Você pode abrir o link ou ler o QR code com a câmera do celular. Lá, é só enviar uma foto, um PDF ou o texto do documento que o sistema explica.\n\n" +
-    "Se eu passar um código de 4 números, toque em \"Digitar o código\" para abrir a conversa que preparei para você.\n\n" +
+    "Você pode abrir o link ou ler o QR code com a câmera do celular. " +
+    (cod
+      ? "Preparei uma conversa para você. Ao abrir o EntendAI, toque em \"Digitar o código\" e informe estes 4 números:\n\n" +
+        "CÓDIGO: " + cod.codigo + "\n(válido até " + fmtData(cod.expira_em) + ")\n\n"
+      : "Lá, é só enviar uma foto, um PDF ou o texto do documento que o sistema explica.\n\nSe eu passar um código de 4 números, toque em \"Digitar o código\" para abrir a conversa que preparei para você.\n\n") +
     "O EntendAI é informativo e não substitui a orientação de advogado(a) ou da Defensoria Pública.\n\n" +
     "Dúvidas: (61) 3221-6600 ou (61) 3221-6601 · seate.df@trf1.jus.br";
+  let convCod = null;   // código ativo da conversa aberta: { codigo, expira_em }
   let avisoTimer = null;
   function avisoConv(t) {
     const el = $("convAviso");
@@ -288,13 +294,39 @@
     }
   }
   const qrBlob = () => new Promise((res) => $("convQr").toBlob(res, "image/png"));
-  function abrirConvidar() {
+  function atualizarMsgConv(usarCodigo) {
+    $("convMsg").value = msgPadrao(linkSistema(), usarCodigo ? convCod : null);
+  }
+  function desenharCodConv() {
+    const box = $("convCod");
+    if (!state.currentId) { box.hidden = true; return; }
+    box.hidden = false;
+    if (convCod) {
+      box.innerHTML = `<label class="check"><input type="checkbox" id="convUsaCod" checked>
+        <span>Incluir o código desta conversa: <strong class="conv-cod-n">${esc(convCod.codigo)}</strong>
+        <small>(vale até ${esc(fmtData(convCod.expira_em))})</small></span></label>`;
+      $("convUsaCod").onchange = (e) => atualizarMsgConv(e.target.checked);
+    } else {
+      box.innerHTML = `<span class="conv-cod-txt">Esta conversa ainda não tem código para o atendido.</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="convGerarCod">Gerar código desta conversa</button>`;
+      $("convGerarCod").onclick = () => { dlgConv.close(); abrirModal(); };
+    }
+  }
+  async function abrirConvidar() {
     const link = linkSistema();
+    convCod = null;
     $("convLink").textContent = link;
-    $("convMsg").value = msgPadrao(link);
     $("convAviso").textContent = "";
+    $("convCod").hidden = true;
     try { desenharQr(link); } catch (e) { console.error(e); }
+    atualizarMsgConv(false);
     dlgConv.showModal();
+    if (state.currentId) {
+      const r = await callFn("atendente-compartilhar", { acao: "status", conversa_id: state.currentId });
+      if (r.ok && r.data.ativo && r.data.codigo) convCod = { codigo: r.data.codigo, expira_em: r.data.expira_em };
+      desenharCodConv();
+      if (convCod) atualizarMsgConv(true);
+    }
   }
   $("btnConvidar").onclick = abrirConvidar;
   $("btnConvFechar").onclick = () => dlgConv.close();
