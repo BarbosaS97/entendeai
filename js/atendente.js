@@ -268,10 +268,11 @@
     const el = $("convAviso");
     el.textContent = t;
     clearTimeout(avisoTimer);
-    avisoTimer = setTimeout(() => { el.textContent = ""; }, 4000);
+    avisoTimer = setTimeout(() => { el.textContent = ""; }, 9000);
   }
+  function comLimite(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("tempo esgotado")), ms))]); }
   async function copiarTexto(t) {
-    try { await navigator.clipboard.writeText(t); return true; } catch {}
+    try { await comLimite(navigator.clipboard.writeText(t), 1500); return true; } catch {}
     const ta = document.createElement("textarea");
     ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
     document.body.appendChild(ta); ta.select();
@@ -293,6 +294,7 @@
       if (qr.isDark(r, c)) ctx.fillRect(Math.floor((c + margem) * passo), Math.floor((r + margem) * passo), Math.ceil(passo), Math.ceil(passo));
     }
   }
+  let qrPronto = null;   // imagem do QR já gerada (a cópia precisa começar logo no clique)
   const qrBlob = () => new Promise((res) => $("convQr").toBlob(res, "image/png"));
   function atualizarMsgConv(usarCodigo) {
     $("convMsg").value = msgPadrao(linkSistema(), usarCodigo ? convCod : null);
@@ -318,7 +320,7 @@
     $("convLink").textContent = link;
     $("convAviso").textContent = "";
     $("convCod").hidden = true;
-    try { desenharQr(link); } catch (e) { console.error(e); }
+    try { desenharQr(link); qrPronto = null; qrBlob().then((b) => { qrPronto = b; }); } catch (e) { console.error(e); }
     atualizarMsgConv(false);
     dlgConv.showModal();
     if (state.currentId) {
@@ -331,27 +333,34 @@
   $("btnConvidar").onclick = abrirConvidar;
   $("btnConvFechar").onclick = () => dlgConv.close();
   $("btnCopiarMsg").onclick = async () => avisoConv((await copiarTexto($("convMsg").value)) ? "Mensagem copiada. Agora é só colar no e-mail ou no WhatsApp." : "Não foi possível copiar. Selecione o texto e copie manualmente.");
-  // Combo completo: texto + imagem do QR code na mesma cópia (e-mail e WhatsApp Web costumam colar os dois)
-  $("btnCopiarTudo").onclick = async () => {
+  // Combo completo: texto + imagem do QR code. Tenta do mais completo ao mais simples e diz o que foi copiado.
+  function feedbackBotao(btn, ok) {
+    const orig = btn.dataset.rotulo || btn.textContent;
+    btn.dataset.rotulo = orig;
+    btn.textContent = ok ? "Copiado!" : "Não copiou";
+    setTimeout(() => { btn.textContent = orig; }, 2200);
+  }
+  $("btnCopiarTudo").onclick = async (ev) => {
+    const btn = ev.currentTarget;
     const texto = $("convMsg").value;
     const escHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const corpoHtml = escHtml(texto).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/\n/g, "<br>");
-    try {
-      const blob = await qrBlob();
-      const dataUrl = $("convQr").toDataURL("image/png");
-      const html = `<div>${corpoHtml}<br><br><img src="${dataUrl}" width="240" height="240" alt="QR code do EntendAI"></div>`;
-      await navigator.clipboard.write([new ClipboardItem({
-        "image/png": blob,
-        "text/plain": new Blob([texto], { type: "text/plain" }),
-        "text/html": new Blob([html], { type: "text/html" }),
-      })]);
-      avisoConv("Mensagem e QR code copiados. Cole no e-mail ou no WhatsApp.");
-    } catch {
-      const ok = await copiarTexto(texto);
-      avisoConv(ok
-        ? "Seu navegador não copia texto e imagem juntos. A mensagem foi copiada; use \"Copiar QR code\" para a imagem."
-        : "Não foi possível copiar. Selecione o texto e copie manualmente.");
+    const dataUrl = $("convQr").toDataURL("image/png");
+    const html = `<div>${corpoHtml}<br><br><img src="${dataUrl}" width="240" height="240" alt="QR code do EntendAI"></div>`;
+    const tx = new Blob([texto], { type: "text/plain" });
+    const ht = new Blob([html], { type: "text/html" });
+    const tentativas = [
+      async () => { const img = qrPronto || (await qrBlob()); await comLimite(navigator.clipboard.write([new ClipboardItem({ "image/png": img, "text/plain": tx, "text/html": ht })]), 1500); return "Mensagem e QR code copiados. Cole no e-mail ou no WhatsApp."; },
+      async () => { await comLimite(navigator.clipboard.write([new ClipboardItem({ "text/plain": tx, "text/html": ht })]), 1500); return "Mensagem e QR code copiados (para e-mail). No WhatsApp, cole a mensagem e use também \"Copiar QR code\"."; },
+      async () => { if (!(await copiarTexto(texto))) throw new Error("sem cópia"); return "Só a mensagem foi copiada (o navegador não copia imagem). Use \"Copiar QR code\" para a imagem."; },
+    ];
+    let ultimoErro = "";
+    for (const t of tentativas) {
+      try { const msg = await t(); avisoConv(msg); feedbackBotao(btn, true); return; }
+      catch (e) { ultimoErro = (e && e.name) || "erro"; console.warn("cópia combinada:", e); }
     }
+    avisoConv("Não foi possível copiar (" + ultimoErro + "). Use \"Baixar imagem\" e copie o texto manualmente.");
+    feedbackBotao(btn, false);
   };
   $("btnCopiarLink").onclick = async () => avisoConv((await copiarTexto(linkSistema())) ? "Link copiado." : "Não foi possível copiar o link.");
   $("btnCopiarQr").onclick = async () => {

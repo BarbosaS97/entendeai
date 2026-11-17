@@ -31,6 +31,7 @@
         Acessar conversa com código
       </button>
       <nav class="conv-list" id="convList" aria-label="Histórico de conversas"></nav>
+      <div class="side-extra" id="sideExtra">
       <div class="side-opcoes" id="sideOpcoes" hidden><span class="side-opcoes-t">Aparência</span></div>
       <button class="side-voz" id="btnVozMelhor" type="button" hidden>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3.5v-11L6 8H3z"/><path d="M13 7.5a3.5 3.5 0 010 5M15.5 5a7 7 0 010 10"/></svg>
@@ -47,6 +48,12 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 016 0V9"/></svg>
         <span>Suas conversas ficam acessíveis apenas a você. Conversas compartilhadas por código ficam acessíveis a quem tiver o código.</span>
       </p>
+      </div>
+      <button type="button" class="side-mais" id="btnSideMais" aria-expanded="false" aria-controls="sideExtra">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 9v5M10 6.5h.01"/></svg>
+        <span>Opções, contato e ajuda</span>
+        <svg class="side-mais-seta" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12l5-5 5 5"/></svg>
+      </button>
     </aside>
     <div class="backdrop" id="backdrop"></div>
 

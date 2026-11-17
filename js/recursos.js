@@ -87,6 +87,25 @@
     (mq.addEventListener ? mq.addEventListener("change", posicionar) : mq.addListener(posicionar));
   })();
 
+  // No celular, contato, opções e ferramentas ficam num painel que abre por um botão (deixa o histórico livre)
+  (function () {
+    const btn = $("btnSideMais"), painel = $("sideExtra"), app = $("app");
+    if (!btn || !painel) return;
+    const abrir = (v) => {
+      painel.classList.toggle("aberto", v);
+      btn.setAttribute("aria-expanded", v ? "true" : "false");
+      btn.classList.toggle("aberto", v);
+    };
+    btn.addEventListener("click", (e) => { e.stopPropagation(); abrir(!painel.classList.contains("aberto")); });
+    document.addEventListener("click", (e) => {
+      if (painel.classList.contains("aberto") && !painel.contains(e.target) && !btn.contains(e.target)) abrir(false);
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") abrir(false); });
+    if (app && window.MutationObserver) {
+      new MutationObserver(() => { if (!app.classList.contains("menu-open")) abrir(false); }).observe(app, { attributes: true, attributeFilter: ["class"] });
+    }
+  })();
+
   // =====================================================================
   // 2) Ouvir a resposta: voz neural LOCAL (Piper, grátis, roda no aparelho) com reserva na voz do navegador
   // =====================================================================
