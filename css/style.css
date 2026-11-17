@@ -1175,16 +1175,9 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .zoom-alto .top-logo { display: none; }
 }
 
-/* Topo moderno: faixa de cor uniforme; só o canto esquerdo faz uma curva suave (a faixa "desce" do canto até a altura cheia) */
-.topbar { position: relative; border-bottom: 0; background: transparent; isolation: isolate; }
-.topbar::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 10px); z-index: -1; pointer-events: none;
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
-  --cap: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0H240V100C130 100 60 88 0 28Z'/%3E%3C/svg%3E");
-  -webkit-mask: var(--cap) left top / 240px 100% no-repeat, linear-gradient(#000, #000) 239px 0 / calc(100% - 239px) 100% no-repeat;
-          mask: var(--cap) left top / 240px 100% no-repeat, linear-gradient(#000, #000) 239px 0 / calc(100% - 239px) 100% no-repeat;
-}
-@media (max-width: 800px) { .topbar::before { height: calc(100% + 6px); } }
+/* Topo transparente: só os botões e o logo, sobre o fundo com as ondas das quinas */
+.topbar { position: relative; border-bottom: 0; background: transparent; }
+.topbar::before { content: none; }
 
 /* Barra de separação + "Justiça Federal / Distrito Federal" ao lado do logo do topo */
 .top-jf { display: none; }
@@ -1307,3 +1300,43 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 #btnInstalar[hidden] { display: none; }
 .side-extra #btnInstalar { margin-bottom: 6px; }
 .instalar-passos { margin: 8px 0 12px; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.4; }
+
+/* ===== Refinamento visual: ondas suaves nas quinas, caixa de mensagem em cápsula, detalhes ===== */
+.main { position: relative; isolation: isolate; overflow-x: clip; }
+.main::before, .main::after {
+  content: ""; position: absolute; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background-repeat: no-repeat; background-size: 100% 100%;
+}
+.main::before { top: 0; left: 0; width: 520px; height: 420px; background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 520 420%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232f6fe0%22 stop-opacity=%221%22/%3E%3Cstop offset=%221%22 stop-color=%22%232f6fe0%22 stop-opacity=%22.12%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%233fa9ff%22 stop-opacity=%221%22/%3E%3Cstop offset=%221%22 stop-color=%22%233fa9ff%22 stop-opacity=%22.1%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill=%22url%28%23a%29%22 fill-opacity=%22.07%22 d=%22M0 0H500C470 80 396 138 312 188 214 248 112 312 0 420Z%22/%3E%3Cpath fill=%22url%28%23a%29%22 fill-opacity=%22.10%22 d=%22M0 0H400C366 70 308 112 244 152 168 200 84 258 0 346Z%22/%3E%3Cpath fill=%22url%28%23b%29%22 fill-opacity=%22.14%22 d=%22M0 0H250C226 50 178 84 124 118 76 148 32 182 0 232Z%22/%3E%3C/svg%3E"); }
+.main::after { right: 0; bottom: 0; width: 460px; height: 340px; transform: scale(-1, -1); background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 460 340%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232f6fe0%22 stop-opacity=%221%22/%3E%3Cstop offset=%221%22 stop-color=%22%232f6fe0%22 stop-opacity=%22.12%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%233fa9ff%22 stop-opacity=%221%22/%3E%3Cstop offset=%221%22 stop-color=%22%233fa9ff%22 stop-opacity=%22.1%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill=%22url%28%23a%29%22 fill-opacity=%22.07%22 d=%22M0 0H430C402 70 336 112 262 150 168 198 70 232 0 340Z%22/%3E%3Cpath fill=%22url%28%23a%29%22 fill-opacity=%22.10%22 d=%22M0 0H330C308 54 258 88 200 120 134 156 64 180 0 272Z%22/%3E%3Cpath fill=%22url%28%23b%29%22 fill-opacity=%22.14%22 d=%22M0 0H200C186 40 146 68 100 94 60 116 26 136 0 176Z%22/%3E%3C/svg%3E"); }
+.main:has(.welcome:not([hidden]))::before, .main:has(.welcome:not([hidden]))::after { opacity: 1; }
+@media (max-width: 800px) {
+  .main::before { width: 320px; height: 258px; }
+  .main::after { width: 280px; height: 207px; }
+}
+.composer-wrap { background: transparent; }
+
+.welcome h2 .h2-dest { color: var(--accent); }
+
+.bloco-envio, .bloco-codigo { box-shadow: 0 10px 32px color-mix(in srgb, var(--accent) 9%, transparent); border-radius: 16px; }
+
+.composer {
+  border-radius: 28px; padding: 6px 8px 6px 12px;
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--accent) 11%, transparent);
+}
+.composer:focus-within { box-shadow: 0 0 0 3px var(--accent-soft), 0 8px 28px color-mix(in srgb, var(--accent) 14%, transparent); }
+.composer .mic-btn { margin-left: 4px; border-radius: 50%; box-shadow: -1px 0 0 var(--line); }
+.send { width: 46px; height: 46px; border-radius: 50%; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 38%, transparent); }
+.send svg { width: 20px; height: 20px; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; margin-left: -1px; }
+@media (max-width: 800px) { .send { width: 44px; height: 44px; } }
+
+.disclaimer::before {
+  content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2210%22 cy=%2210%22 r=%227.5%22/%3E%3Cpath d=%22M10 9v5M10 6.2h.01%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22 fill=%22none%22 stroke=%22black%22 stroke-width=%221.6%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2210%22 cy=%2210%22 r=%227.5%22/%3E%3Cpath d=%22M10 9v5M10 6.2h.01%22/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.topbar .tema-btn, .topbar .tam-texto { box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* as ondas das quinas nunca passam da largura da tela (ex.: letras no tamanho máximo) */
+.main::before, .main::after { max-width: 100%; }
