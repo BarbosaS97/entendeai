@@ -48,22 +48,29 @@
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-btn menu-btn" id="btnMenu" aria-label="Abrir menu">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+        <button class="menu-btn" id="btnMenu" type="button" aria-controls="sidebar" aria-expanded="false"
+                aria-label="Abrir o histórico de conversas" title="Histórico de conversas">
+          <svg class="menu-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5h9M7.5 10h9M7.5 15h9M3.5 5h.01M3.5 10h.01M3.5 15h.01"/></svg>
+          <span class="menu-label">Histórico</span>
+          <span class="menu-badge" id="menuBadge" hidden>0</span>
+          <svg class="menu-seta" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5l5 5-5 5"/></svg>
         </button>
         <h1 class="topbar-title" id="topTitle"></h1>
-        <img class="top-logo" src="img/logo.webp" alt="EntendAI" width="1455" height="656">
-        <div class="topbar-actions"><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div></div>
+        <img class="top-logo" src="img/logo-nome.webp" alt="EntendAI" width="2019" height="338">
+        <div class="topbar-actions"><button type="button" class="btn btn-secondary btn-sm topbar-novo" id="btnNovoTopo" hidden title="Começar uma nova conversa"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>Nova conversa</span></button><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div></div>
       </header>
 
       <div id="banner" class="banner" hidden role="status"></div>
 
       <section class="chat" id="chat" aria-live="polite">
-        <div class="welcome" id="welcome">
+        <div class="welcome welcome-duas" id="welcome">
+          <div class="welcome-topo">
           <div class="welcome-logo"><img class="logo-banner" src="img/logo-jf-df.webp" alt="Justiça Federal – Distrito Federal" width="1677" height="571"></div>
           <p class="eyebrow">Assistente de leitura jurídica</p>
           <h2>Entenda seu processo, sem complicação.</h2>
           <p class="lead">Envie seu documento ou escreva sua dúvida. Eu explico em linguagem simples.</p>
+          </div>
+          <div class="welcome-corpo">
           <section class="bloco-envio" aria-label="Como usar">
             <ol class="passos">
               <li>
@@ -100,6 +107,7 @@
           </section>
           <p class="contato-inline">Dúvidas? Fale com o atendimento:
             <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a></p>
+          </div>
         </div>
         <div class="messages" id="messages"></div>
       </section>

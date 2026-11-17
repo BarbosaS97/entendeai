@@ -62,11 +62,12 @@
   const PLACEHOLDER_ATUAL = () => {
     if (!mqCelular.matches) return PH_DESKTOP;
     const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--zoom")) || 1;
-    return z > 1.2 ? "Escreva aqui" : PH_CELULAR;
+    return (z > 1.2 || window.innerWidth <= 380) ? "Escreva aqui" : PH_CELULAR;   // telas muito estreitas: texto mais curto
   };
   el.input.placeholder = PLACEHOLDER_ATUAL();
   const atualizarPlaceholder = () => { if (!state.readonly) el.input.placeholder = PLACEHOLDER_ATUAL(); };
   mqCelular.addEventListener("change", atualizarPlaceholder);
+  window.matchMedia("(max-width: 380px)").addEventListener("change", atualizarPlaceholder);
   document.addEventListener("entend:zoom", atualizarPlaceholder);
   const state = { user: null, convs: [], currentId: null, pending: [], busy: false, readonly: false };
 
@@ -189,6 +190,8 @@
     renderConvs();
   }
   function renderConvs() {
+    const badge = $("menuBadge");
+    if (badge) { badge.textContent = String(state.convs.length); badge.hidden = state.convs.length === 0; }
     el.convList.innerHTML = "";
     if (!state.convs.length) {
       el.convList.innerHTML = '<div class="empty-list">Suas conversas aparecerão aqui.</div>';
@@ -891,7 +894,16 @@
   }
 
   // ---------- menu mobile ----------
-  function closeMenu() { el.app.classList.remove("menu-open"); }
+  function closeMenu() { el.app.classList.remove("menu-open"); atualizarMenu(); }
+  // Mantém o botão "Histórico" coerente com o estado do menu (aberto ou fechado)
+  function atualizarMenu() {
+    const celular = window.matchMedia("(max-width: 800px)").matches;
+    const aberto = celular ? el.app.classList.contains("menu-open") : !el.app.classList.contains("side-collapsed");
+    el.btnMenu.setAttribute("aria-expanded", aberto ? "true" : "false");
+    const txt = aberto ? "Fechar o histórico de conversas" : "Abrir o histórico de conversas";
+    el.btnMenu.setAttribute("aria-label", txt);
+    el.btnMenu.title = txt;
+  }
 
   // ---------- eventos ----------
   el.composer.addEventListener("submit", (e) => { e.preventDefault(); send(); });
@@ -927,12 +939,21 @@
   el.btnAttach.onclick = () => el.fileInput.click();
   el.fileInput.onchange = () => { addFiles([...el.fileInput.files]); el.fileInput.value = ""; };
   const isMobile = () => window.matchMedia("(max-width: 800px)").matches;
-  try { if (localStorage.getItem("sideCollapsed") === "1") el.app.classList.add("side-collapsed"); } catch {}
+  // O menu (histórico) SEMPRE começa fechado; abre só quando a pessoa pedir
+  el.app.classList.add("side-collapsed");
   el.btnMenu.onclick = () => {
-    if (isMobile()) { el.app.classList.toggle("menu-open"); return; }
-    const c = el.app.classList.toggle("side-collapsed");
-    try { localStorage.setItem("sideCollapsed", c ? "1" : "0"); } catch {}
+    if (isMobile()) el.app.classList.toggle("menu-open");
+    else el.app.classList.toggle("side-collapsed");
+    atualizarMenu();
   };
+  atualizarMenu();
+  window.matchMedia("(max-width: 800px)").addEventListener("change", () => { el.app.classList.remove("menu-open"); atualizarMenu(); });
+  // "Nova conversa" também no topo (aparece quando há uma conversa aberta)
+  const btnNovoTopo = $("btnNovoTopo");
+  if (btnNovoTopo) {
+    btnNovoTopo.onclick = newConv;
+    document.addEventListener("entend:conversa", (e) => { btnNovoTopo.hidden = !e.detail.id; });
+  }
   el.backdrop.onclick = closeMenu;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
   document.querySelectorAll(".starter").forEach((c) => {

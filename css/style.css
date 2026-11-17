@@ -864,3 +864,161 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 .side-voz:hover { color: var(--accent); background: color-mix(in srgb, var(--text) 6%, transparent); }
 .voz-progresso { margin: 4px 0 6px; }
 .voz-progresso .leitura-etapa { min-height: 0; margin: 8px 0 0; font-size: 14px; }
+
+/* =====================================================================
+   Tela inicial compacta: cabe sem rolar em notebooks e celulares
+   ===================================================================== */
+.chat { display: flex; flex-direction: column; container-type: inline-size; }
+.chat > .messages { width: 100%; flex: none; }
+.chat > .welcome { flex: none; width: 100%; max-width: 640px; margin: auto; }   /* centraliza na vertical quando cabe */
+
+.welcome-logo { margin-bottom: 12px; }
+.welcome-logo .logo-banner { width: min(220px, 100%); }
+.welcome .eyebrow { margin-bottom: 8px; }
+.welcome h2 { font-size: clamp(26px, 3.2vw, 32px); margin: 0 0 8px; }
+.welcome .lead { font-size: 15px; line-height: 1.5; margin: 0 0 16px; }
+.bloco-envio { margin: 0 0 12px; }
+.passos { display: grid; grid-template-columns: 1fr 1fr; }
+.passos li { padding: 13px 16px; }
+.passos li:first-child { grid-column: 1 / -1; }
+.passos li:nth-child(3) { border-left: 1px solid var(--line); }
+.ou-divisor { margin: 0 0 10px; }
+.bloco-codigo { padding: 11px 16px; }
+.contato-inline { margin: 10px 0 0; }
+
+/* Tela larga: texto à esquerda, passos à direita (aproveita a largura e economiza altura) */
+@container (min-width: 900px) {
+  .chat > .welcome-duas { max-width: 1020px; display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); column-gap: 44px; align-items: center; }
+  .welcome-duas .welcome-logo .logo-banner { width: min(250px, 100%); }
+  .welcome-duas h2 { font-size: 32px; }
+  .welcome-duas .lead { margin-bottom: 0; }
+}
+
+/* Telas baixas (notebooks): menos espaço vertical */
+@media (max-height: 780px) {
+  .welcome .lead { display: none; }
+  .welcome-logo { margin-bottom: 8px; }
+  .welcome-logo .logo-banner { width: min(185px, 100%); }
+  .welcome h2 { font-size: 26px; margin-bottom: 4px; }
+  .chat { padding-top: 14px; padding-bottom: 10px; }
+  .passos li { padding-top: 11px; padding-bottom: 11px; }
+  .contato-inline { margin-top: 8px; }
+}
+@media (max-height: 640px) {
+  .welcome .eyebrow { display: none; }
+  .passos li:not(:first-child) .passo-t small { display: none; }
+}
+
+/* Celular: botões lado a lado, passos 2 e 3 lado a lado, cartão do código em linha */
+@media (max-width: 640px) {
+  .welcome-logo .logo-banner { width: min(150px, 52%); }
+  .welcome .lead { display: none; }
+  .welcome h2 { font-size: 24px; }
+  .acoes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .acao { flex-direction: column; justify-content: center; gap: 4px; min-height: 62px; padding: 8px 4px; font-size: 13px; line-height: 1.2; text-align: center; }
+  .acao svg { width: 22px; height: 22px; }
+  .passos li { gap: 10px; padding: 11px 12px; }
+  .passo-n { font-size: 28px; min-width: 18px; }
+  .passo-t b { font-size: 14.5px; }
+  .passos li:not(:first-child) .passo-t small { display: none; }
+  .bloco-codigo { flex-direction: row; align-items: center; gap: 10px; padding: 10px 12px; }
+  .codigo-texto b { font-size: 15px; }
+  .codigo-texto small { font-size: 12.5px; line-height: 1.35; }
+  .codigo-btn { min-height: 46px; padding: 8px 12px; }
+  .contato-inline { font-size: 12px; margin-top: 8px; }
+}
+
+/* ---- Ajustes finos da tela inicial ---- */
+/* Botões de envio sem quebrar linha em telas largas */
+@media (min-width: 641px) {
+  .acao { white-space: nowrap; padding: 10px 8px; font-size: 14.5px; }
+}
+@container (min-width: 900px) {
+  .chat > .welcome-duas { grid-template-columns: minmax(250px, 310px) minmax(0, 1fr); column-gap: 36px; }
+}
+/* Janelas baixas em coluna única */
+@media (max-height: 720px) {
+  .welcome-logo .logo-banner { width: min(150px, 100%); }
+  .welcome h2 { font-size: 24px; }
+  .welcome .eyebrow { margin-bottom: 4px; }
+  .bloco-envio { margin-bottom: 10px; }
+  .passos li { padding-top: 9px; padding-bottom: 9px; }
+  .contato-inline { margin-top: 6px; }
+}
+/* Celulares pequenos / baixos */
+@media (max-width: 640px) and (max-height: 700px) {
+  .welcome .eyebrow { display: none; }
+  .welcome-logo { margin-bottom: 6px; }
+  .welcome-logo .logo-banner { width: 118px; }
+  .welcome h2 { font-size: 21px; margin-bottom: 8px; }
+  .passos li:first-child .passo-t small { display: none; }
+  .passos li:first-child { padding-bottom: 10px; }
+  .acoes { margin-top: 8px; }
+  .acao { min-height: 56px; }
+  .ou-divisor { font-size: 12px; margin-bottom: 8px; }
+  .codigo-texto small { display: none; }
+  .bloco-codigo { padding: 8px 12px; }
+  .chat { padding: 12px 14px 8px; }
+}
+@media (max-width: 640px) and (max-height: 700px) {
+  .bloco-envio { margin-bottom: 8px; }
+  .passos li { padding-top: 8px; padding-bottom: 8px; }
+  .acao { min-height: 52px; }
+  .ou-divisor { margin-bottom: 6px; }
+  .contato-inline { margin-top: 5px; }
+  .welcome h2 { margin-bottom: 6px; }
+}
+@media (max-width: 380px) {
+  .codigo-btn svg { display: none; }
+  .codigo-btn { padding: 8px 10px; }
+  .codigo-texto b { font-size: 14px; }
+}
+@media (max-width: 640px) and (max-height: 700px) {
+  .chat { padding-top: 8px; }
+  .welcome-logo .logo-banner { width: 108px; }
+}
+
+/* =====================================================================
+   Botão "Histórico": deixa claro que ali abre a lista de conversas
+   ===================================================================== */
+.menu-btn {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 0 -4px; padding: 7px 10px 7px 11px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+  font: inherit; font-size: 14px; font-weight: 500; line-height: 1; white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.menu-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.menu-btn:hover { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent); }
+.menu-btn .menu-seta { width: 14px; height: 14px; color: var(--muted); transition: transform .2s; }
+.menu-badge {
+  min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; border-radius: 10px; font-size: 12px; font-weight: 600;
+}
+.menu-badge[hidden] { display: none; }
+/* menu aberto: botão destacado e seta virada */
+.menu-btn[aria-expanded="true"] { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent); }
+.menu-btn[aria-expanded="true"] .menu-seta { transform: rotate(180deg); color: var(--accent); }
+
+/* Menu fechado no computador: a logo do EntendAI aparece no topo (antes ficava só dentro do menu) */
+.app.side-collapsed .top-logo { display: block; height: 34px; width: auto; margin-left: 4px; }
+.app.side-collapsed .topbar-title:not(:empty) + .top-logo { display: none; }
+@media (min-width: 801px) { .topbar { gap: 10px; } }
+
+/* "Nova conversa" no topo */
+.topbar-novo svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.topbar-novo[hidden] { display: none; }
+@media (max-width: 800px) {
+  .menu-btn { margin-left: -2px; padding: 8px 9px 8px 10px; }
+  .menu-btn .menu-seta { display: none; }
+  .topbar-novo span { display: none; }
+  .topbar-novo { padding: 8px 10px; }
+}
+@media (max-width: 380px) {
+  .menu-label { display: none; }        /* telas muito estreitas: só o ícone e o contador */
+}
+
+/* Logo do topo: só o nome "EntendAI" (legível em qualquer tamanho) */
+.top-logo, .app.side-collapsed .top-logo { height: 24px; width: auto; min-width: 0; max-width: 100%; object-fit: contain; margin-left: 6px; flex: 0 1 auto; }
+@media (max-width: 800px) {
+  .top-logo, .app.side-collapsed .top-logo { height: 21px; margin-left: 4px; }
+}
