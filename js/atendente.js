@@ -30,6 +30,7 @@
     telaApp.hidden = false;
     $("sideUserNome").textContent = sessao.nome;
     await App.loadConvs();
+    await App.restaurarConversa();
     // Ao expirar a sessão (no servidor), volta para o login
     clearTimeout(timerExpiracao);
     const ms = new Date(sessao.expira_em) - Date.now();
@@ -168,4 +169,47 @@
       mostrarLogin();
     }
   })();
+
+  // ---------- avaliações das respostas ("Esta explicação ajudou?") ----------
+  const dlgAval = $("dlgAvaliacoes");
+  let avalDados = [], avalFiltro = "todas";
+  function desenharAval() {
+    const lista = $("avalLista");
+    const itens = avalDados.filter((a) => avalFiltro === "todas" || (avalFiltro === "pos" ? a.util : !a.util));
+    if (!itens.length) { lista.innerHTML = '<p class="aval-vazio">Nenhuma avaliação neste filtro.</p>'; return; }
+    lista.innerHTML = itens.map((a) => {
+      const quando = new Date(a.criado_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return `<article class="aval-item ${a.util ? "pos" : "neg"}">
+        <header><b>${a.util ? "Ajudou" : "Não ajudou"}</b><time>${esc(quando)}</time></header>
+        ${a.comentario ? `<p class="aval-coment">&ldquo;${esc(a.comentario)}&rdquo;</p>` : ""}
+        <details><summary>Ver início da resposta avaliada</summary><p class="aval-trecho">${esc(a.trecho || "")}${(a.trecho || "").length >= 300 ? "…" : ""}</p></details>
+      </article>`;
+    }).join("");
+  }
+  async function abrirAvaliacoes() {
+    $("avalTotais").textContent = "Carregando...";
+    $("avalLista").innerHTML = "";
+    dlgAval.showModal();
+    const [t, l] = await Promise.all([sb.rpc("avaliacoes_totais"), sb.rpc("avaliacoes_lista", { p_limite: 150 })]);
+    if (t.error || l.error) {
+      $("avalTotais").textContent = "Não foi possível carregar. Confira se o SQL 006_avaliacoes_atendente.sql foi executado.";
+      return;
+    }
+    const tot = (t.data && t.data[0]) || { positivas: 0, negativas: 0 };
+    const pos = Number(tot.positivas), neg = Number(tot.negativas), soma = pos + neg;
+    $("avalTotais").innerHTML = `<div><strong>${pos}</strong><span>ajudou</span></div><div><strong>${neg}</strong><span>não ajudou</span></div><div><strong>${soma ? Math.round((pos / soma) * 100) : 0}%</strong><span>aprovação</span></div>`;
+    avalDados = l.data || [];
+    avalFiltro = "todas";
+    dlgAval.querySelectorAll(".aval-filtro button").forEach((b) => b.classList.toggle("ativo", b.dataset.f === "todas"));
+    desenharAval();
+  }
+  $("btnAvaliacoes").onclick = () => { abrirAvaliacoes(); };
+  $("btnAvalFechar").onclick = () => dlgAval.close();
+  dlgAval.querySelectorAll(".aval-filtro button").forEach((b) => {
+    b.onclick = () => {
+      avalFiltro = b.dataset.f;
+      dlgAval.querySelectorAll(".aval-filtro button").forEach((x) => x.classList.toggle("ativo", x === b));
+      desenharAval();
+    };
+  });
 })();

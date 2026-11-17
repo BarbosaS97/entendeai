@@ -660,9 +660,11 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
   const LINHA_CONTATO =
     'Ficou com dúvida? Fale com o atendimento: <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a>';
 
-  async function registrarAvaliacao(util, id) {
+  async function registrarAvaliacao(util, id, comentario) {
     if (!id) return;
-    try { await sb.from("avaliacoes").upsert({ mensagem_id: id, util }, { onConflict: "user_id,mensagem_id" }); } catch {}
+    const linha = { mensagem_id: id, util };
+    if (comentario) linha.comentario = comentario;
+    try { await sb.from("avaliacoes").upsert(linha, { onConflict: "user_id,mensagem_id" }); } catch {}
   }
 
   function decorar(wrap, texto, id, sugestoesIA = []) {
@@ -716,9 +718,22 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
         const util = b.dataset.v === "1";
         registrarAvaliacao(util, id || wrap.dataset.id);
         av.classList.add("respondida");
-        av.innerHTML = util
-          ? `<span class="ok">${I.ok}Obrigado! Fico feliz em ajudar.</span>`
-          : '<span>Sentimos muito. Toque em <b>Explicar mais simples</b> ou fale com uma pessoa do atendimento, abaixo.</span>';
+        if (util) { av.innerHTML = `<span class="ok">${I.ok}Obrigado! Fico feliz em ajudar.</span>`; return; }
+        // "Não": caixa de feedback opcional
+        av.innerHTML = '<div class="aval-fb">' +
+          '<label for="avalTxt">Sentimos muito. Quer nos contar o que não ajudou? <small>(opcional)</small></label>' +
+          '<textarea id="avalTxt" rows="3" maxlength="500" placeholder="Ex.: ficou difícil de entender, faltou explicar algo, a resposta não tem a ver com meu documento..."></textarea>' +
+          '<small class="aval-aviso">Não escreva dados pessoais (CPF, número do processo, endereço).</small>' +
+          '<div class="aval-botoes"><button type="button" class="aval-enviar">Enviar</button><button type="button" class="aval-pular">Agora não</button></div></div>';
+        const txt = av.querySelector("textarea");
+        const encerrar = (msg) => { av.innerHTML = '<span>' + msg + ' Se precisar, fale com uma pessoa do atendimento, abaixo.</span>'; };
+        av.querySelector(".aval-enviar").onclick = () => {
+          const c = txt.value.trim();
+          if (c) { registrarAvaliacao(false, id || wrap.dataset.id, c); encerrar("Obrigado pelo retorno, ele nos ajuda a melhorar."); }
+          else encerrar("Tudo bem.");
+        };
+        av.querySelector(".aval-pular").onclick = () => encerrar("Tudo bem.");
+        setTimeout(() => { try { txt.focus({ preventScroll: true }); } catch {} }, 50);
         if (!util) wrap.classList.add("precisa-ajuda");
       };
     });

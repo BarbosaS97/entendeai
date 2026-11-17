@@ -86,8 +86,10 @@
   }
 
   // Define a conversa aberta e avisa quem precisar saber (ex.: botão "Compartilhar conversa")
+  const CHAVE_CONV = "conversaAberta_" + MODO;   // lembra a conversa aberta ao atualizar a página (só nesta aba)
   function setCurrent(id) {
     state.currentId = id;
+    try { if (id) sessionStorage.setItem(CHAVE_CONV, id); else sessionStorage.removeItem(CHAVE_CONV); } catch {}
     document.dispatchEvent(new CustomEvent("entend:conversa", { detail: { id } }));
   }
 
@@ -251,6 +253,14 @@
     } else {
       setReadonly(false);
     }
+  }
+  // Depois de atualizar a página: volta para a conversa que estava aberta (se ainda existir)
+  async function restaurarConversa() {
+    let id = null;
+    try { id = sessionStorage.getItem(CHAVE_CONV); } catch {}
+    if (!id || state.currentId) return;
+    if (state.convs.some((c) => c.id === id)) await openConv(id);
+    else { try { sessionStorage.removeItem(CHAVE_CONV); } catch {} }
   }
   async function deleteConv(id) {
     const conv = state.convs.find((c) => c.id === id);
@@ -1032,7 +1042,7 @@
 
   // ---------- início ----------
   // API usada pelos módulos extras (atendente.js e codigo.js)
-  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, openConv, newConv, send, addFiles, copyButton, renderMd, enviarTexto, autoGrow, MAX_FILES };
+  window.EntendApp = { MODO, sb, state, el, ICON, esc, showBanner, callFn, initAuth, loadConvs, restaurarConversa, openConv, newConv, send, addFiles, copyButton, renderMd, enviarTexto, autoGrow, MAX_FILES };
 
   // No modo atendente, quem inicia é o atendente.js (depois do login).
   if (MODO !== "atendente") {
@@ -1040,6 +1050,7 @@
       try {
         await initAuth();
         await loadConvs();
+        await restaurarConversa();
       } catch (e) { console.error(e); }
     })();
   }

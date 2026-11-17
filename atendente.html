@@ -52,6 +52,10 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3.5v-11L6 8H3z"/><path d="M13 7.5a3.5 3.5 0 010 5M15.5 5a7 7 0 010 10"/></svg>
         Baixar voz mais natural
       </button>
+      <button class="side-link" id="btnAvaliacoes" type="button">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5"/></svg>
+        Avaliações das respostas
+      </button>
       <div class="side-user">
         <div class="side-user-info">
           <span class="side-user-label">Atendente</span>
@@ -125,6 +129,21 @@
     <div class="modal-body">
       <h2 id="dlgCompTitulo">Compartilhar conversa</h2>
       <div id="dlgCompCorpo"></div>
+    </div>
+  </dialog>
+
+  <!-- Avaliações das respostas ("Esta explicação ajudou?") -->
+  <dialog class="modal modal-aval" id="dlgAvaliacoes" aria-labelledby="dlgAvalTitulo">
+    <div class="modal-body">
+      <h2 id="dlgAvalTitulo">Avaliações das respostas</h2>
+      <div id="avalTotais" class="aval-totais"></div>
+      <div class="aval-filtro" role="group" aria-label="Filtrar avaliações">
+        <button type="button" class="ativo" data-f="todas">Todas</button>
+        <button type="button" data-f="neg">Não ajudou</button>
+        <button type="button" data-f="pos">Ajudou</button>
+      </div>
+      <div id="avalLista" class="aval-lista"></div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" id="btnAvalFechar">Fechar</button></div>
     </div>
   </dialog>
 

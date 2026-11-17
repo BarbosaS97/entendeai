@@ -1203,3 +1203,35 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 @media (max-width: 800px) { .zoom-alto .top-jf { display: none; } }
 .side-opcoes .tema-btn .tema-txt { display: inline; }
 .side-opcoes .tema-btn { padding: 0 14px; gap: 8px; }
+
+/* Caixa de feedback opcional ("Esta explicação ajudou?" > Não) */
+.aval-fb { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 560px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.aval-fb label { font-size: 14px; font-weight: 600; color: var(--text); }
+.aval-fb label small, .aval-aviso { font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.aval-fb textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 76px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: 15px; line-height: 1.4; }
+.aval-fb textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); border-color: var(--accent); }
+.aval-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.msg-avalia .aval-botoes button { min-height: 40px; padding: 8px 18px; }
+.msg-avalia .aval-enviar { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.msg-avalia .aval-enviar:hover { color: var(--on-accent, #fff); filter: brightness(1.08); }
+
+/* Painel de avaliações (área do atendente) */
+.modal-aval { width: min(640px, calc(100vw - 24px)); }
+.aval-totais { display: flex; gap: 10px; margin: 10px 0 12px; }
+.aval-totais > div { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); display: flex; flex-direction: column; }
+.aval-totais strong { font-size: 24px; line-height: 1.1; color: var(--text); }
+.aval-totais span { font-size: 13px; color: var(--muted); }
+.aval-filtro { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.aval-filtro button { min-height: 36px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 14px; }
+.aval-filtro button.ativo { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.aval-lista { display: flex; flex-direction: column; gap: 8px; max-height: min(50vh, 420px); overflow: auto; padding-right: 2px; }
+.aval-item { border: 1px solid var(--line); border-left-width: 4px; border-radius: 10px; padding: 10px 12px; background: var(--panel); }
+.aval-item.pos { border-left-color: var(--green); }
+.aval-item.neg { border-left-color: #d14343; }
+.aval-item header { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.aval-item time { color: var(--muted); font-size: 12.5px; }
+.aval-coment { margin: 6px 0 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.aval-item details { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.aval-item summary { cursor: pointer; padding: 4px 0; }
+.aval-trecho { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.aval-vazio { color: var(--muted); text-align: center; padding: 18px 0; }
