@@ -660,8 +660,8 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
   // Sugestões "plano B" (quando a IA não mandou as dela): só o que ainda NÃO está na resposta
   function sugestoesPorConteudo(texto) {
     const t = semAcentoR(texto);
-    const estruturada = /^#{1,3}\s/m.test(texto);
-    if (!estruturada && texto.length < 700) return [];            // resposta curta, recusa ou aviso: sem sugestões
+    // só quando a resposta é a explicação de um documento (formato "Resumo em uma frase"); nada de sugestão solta
+    if (!/^#{1,3}\s*resumo em uma frase/mi.test(texto)) return [];
     const chips = [];
     if (!/prazo/.test(t)) chips.push(["Tem algum prazo?", "Existe algum prazo ou data importante neste documento?"]);
     if (!/palavras dificeis|glossario/.test(t)) chips.push(["Palavras difíceis", "Explique as palavras difíceis que aparecem neste documento."]);
