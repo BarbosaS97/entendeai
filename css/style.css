@@ -1022,3 +1022,6 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 @media (max-width: 800px) {
   .top-logo, .app.side-collapsed .top-logo { height: 21px; margin-left: 4px; }
 }
+
+/* Botão do histórico sem texto: ícone de lista, contador e seta */
+.menu-btn { gap: 7px; padding: 8px 10px 8px 11px; }
