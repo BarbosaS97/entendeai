@@ -19,6 +19,7 @@
     file: '<svg viewBox="0 0 20 20"><path d="M5 2.5h6l4 4v11H5z"/><path d="M11 2.5v4h4"/></svg>',
     download: '<svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16.5h12"/></svg>',
     esq: '<svg viewBox="0 0 20 20"><path d="M12 5l-5 5 5 5"/></svg>',
+    enviar: '<svg viewBox="0 0 20 20"><path d="M10 16V4M5 9l5-5 5 5"/></svg>',
     dir: '<svg viewBox="0 0 20 20"><path d="M8 5l5 5-5 5"/></svg>',
   };
 
@@ -661,38 +662,58 @@
     [state.pending[i], state.pending[j]] = [state.pending[j], state.pending[i]];
     renderPending();
   }
+  const tamanhoLegivel = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
+  const tipoDoArquivo = (nome) => {
+    const e = ext(nome);
+    return { pdf: "PDF", docx: "Word", txt: "Texto", md: "Texto", png: "Imagem", jpg: "Imagem", jpeg: "Imagem", webp: "Imagem" }[e] || e.toUpperCase();
+  };
+
+  // Cartão "Documento anexado": confirma que o arquivo entrou e deixa claro como enviar
   function renderPending() {
     el.files.innerHTML = "";
-    el.btnSend.classList.toggle("pulsa", state.pending.length > 0);
-    const varios = state.pending.length > 1;
+    const n = state.pending.length;
+    el.btnSend.classList.toggle("pulsa", n > 0);
+    el.composer.classList.toggle("tem-anexo", n > 0);
+    if (!n) return;
+    const varios = n > 1;
+
+    const card = document.createElement("div");
+    card.className = "anexo-card";
+    card.setAttribute("role", "status");
+    card.innerHTML = `
+      <div class="anexo-topo">
+        <span class="anexo-ok" aria-hidden="true">${ICON.check}</span>
+        <div class="anexo-tit">
+          <strong>${varios ? n + " documentos anexados" : "Documento anexado"}</strong>
+          <span>${varios ? "Estão prontos para enviar, na ordem abaixo." : "Está pronto para enviar."}</span>
+        </div>
+      </div>
+      <div class="anexo-lista"></div>
+      <p class="anexo-dica">Toque em <strong>Enviar</strong>, ao lado da caixa abaixo. Se quiser, escreva antes uma pergunta (opcional).</p>`;
+
+    const lista = card.querySelector(".anexo-lista");
     state.pending.forEach((f, i) => {
       const chip = document.createElement("span");
       chip.className = "file-chip";
+      chip.title = f.name;
       chip.innerHTML =
         (varios ? `<span class="file-num">${i + 1}</span>` : "") +
-        (f.thumb ? `<img class="file-thumb" src="${f.thumb}" alt="">` : ICON.file) +
-        `<span class="file-nome">${esc(f.name)}</span>` +
+        (f.thumb ? `<img class="file-thumb" src="${f.thumb}" alt="">` : `<span class="file-ico">${ICON.file}</span>`) +
+        `<span class="file-info"><span class="file-nome">${esc(f.name)}</span><small>${tipoDoArquivo(f.name)} · ${tamanhoLegivel(f.file.size)}</small></span>` +
         (varios
           ? `<button type="button" class="mv" data-d="-1" aria-label="Mover ${esc(f.name)} para antes" ${i === 0 ? "disabled" : ""}>${ICON.esq}</button>` +
-            `<button type="button" class="mv" data-d="1" aria-label="Mover ${esc(f.name)} para depois" ${i === state.pending.length - 1 ? "disabled" : ""}>${ICON.dir}</button>`
+            `<button type="button" class="mv" data-d="1" aria-label="Mover ${esc(f.name)} para depois" ${i === n - 1 ? "disabled" : ""}>${ICON.dir}</button>`
           : "") +
-        `<button type="button" class="x" aria-label="Remover ${esc(f.name)}">${ICON.close}</button>`;
+        `<button type="button" class="x" aria-label="Remover ${esc(f.name)}" title="Remover">${ICON.close}</button>`;
       chip.querySelectorAll(".mv").forEach((b) => { b.onclick = () => moverPendente(i, Number(b.dataset.d)); });
       chip.querySelector(".x").onclick = () => {
         if (f.thumb) URL.revokeObjectURL(f.thumb);
         state.pending.splice(i, 1);
         renderPending();
       };
-      el.files.appendChild(chip);
+      lista.appendChild(chip);
     });
-    if (state.pending.length) {
-      const dica = document.createElement("span");
-      dica.className = "hint-enviar";
-      dica.textContent = varios
-        ? `Pronto! ${state.pending.length} arquivos, na ordem mostrada. Toque na seta azul para enviar.`
-        : "Pronto! Agora toque na seta azul para enviar.";
-      el.files.appendChild(dica);
-    }
+    el.files.appendChild(card);
   }
 
   // Título da conversa quando a pessoa envia só arquivos
