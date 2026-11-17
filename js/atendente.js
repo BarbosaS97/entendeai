@@ -212,4 +212,37 @@
       desenharAval();
     };
   });
+
+  // ---------- uso do EntendAI (relatório simples) ----------
+  const dlgUso = $("dlgUso");
+  const fmt = (n) => Number(n || 0).toLocaleString("pt-BR");
+  async function abrirUso() {
+    $("usoCards").textContent = "Carregando...";
+    $("usoGrafico").innerHTML = "";
+    dlgUso.showModal();
+    const [t, d] = await Promise.all([sb.rpc("uso_totais"), sb.rpc("uso_por_dia", { p_dias: 14 })]);
+    if (t.error || d.error || !t.data || !t.data[0]) {
+      $("usoCards").textContent = "Não foi possível carregar. Confira se o SQL 007_uso_relatorio.sql foi executado.";
+      return;
+    }
+    const u = t.data[0];
+    const card = (titulo, p, c, q) => `<div class="uso-card"><h3>${titulo}</h3><dl>
+      <div><dt>Pessoas</dt><dd>${fmt(p)}</dd></div><div><dt>Conversas</dt><dd>${fmt(c)}</dd></div><div><dt>Perguntas</dt><dd>${fmt(q)}</dd></div></dl></div>`;
+    const desde = u.primeiro_uso ? new Date(u.primeiro_uso).toLocaleDateString("pt-BR") : null;
+    $("usoCards").innerHTML =
+      card("Hoje", u.pessoas_hoje, u.conversas_hoje, u.perguntas_hoje) +
+      card("Últimos 7 dias", u.pessoas_7d, u.conversas_7d, u.perguntas_7d) +
+      card("Últimos 30 dias", u.pessoas_30d, u.conversas_30d, u.perguntas_30d) +
+      card(desde ? "Total (desde " + desde + ")" : "Total", u.pessoas_total, u.conversas_total, u.perguntas_total);
+    const dias = d.data || [];
+    const max = Math.max(1, ...dias.map((x) => Number(x.perguntas)));
+    $("usoGrafico").innerHTML = dias.map((x) => {
+      const [, mm, dd] = String(x.dia).split("-");
+      const alt = Math.round((Number(x.perguntas) / max) * 100);
+      return `<div class="uso-col" title="${dd}/${mm}: ${fmt(x.perguntas)} perguntas, ${fmt(x.pessoas)} pessoas, ${fmt(x.conversas)} conversas">
+        <span class="uso-val">${fmt(x.perguntas)}</span><span class="uso-barra" style="height:${Math.max(alt, Number(x.perguntas) > 0 ? 4 : 1)}%"></span><span class="uso-dia">${dd}/${mm}</span></div>`;
+    }).join("");
+  }
+  $("btnUso").onclick = () => { abrirUso(); };
+  $("btnUsoFechar").onclick = () => dlgUso.close();
 })();

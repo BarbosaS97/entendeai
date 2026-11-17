@@ -1235,3 +1235,20 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 .aval-item summary { cursor: pointer; padding: 4px 0; }
 .aval-trecho { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .aval-vazio { color: var(--muted); text-align: center; padding: 18px 0; }
+
+/* Relatório de uso (área do atendente) */
+.uso-nota { margin: 4px 0 10px; font-size: 13.5px; color: var(--muted); }
+.uso-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.uso-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--panel); }
+.uso-card h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.uso-card dl { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.uso-card dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13.5px; }
+.uso-card dt { color: var(--muted); }
+.uso-card dd { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
+.uso-sub { margin: 14px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.uso-grafico { display: flex; align-items: flex-end; gap: 3px; height: 130px; padding: 4px 0 0; }
+.uso-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; }
+.uso-barra { width: 100%; max-width: 26px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 1px; }
+.uso-val { font-size: 11px; color: var(--muted); }
+.uso-dia { font-size: 10px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 420px) { .uso-dia { font-size: 9px; writing-mode: vertical-rl; transform: rotate(180deg); } .uso-card { padding: 8px 10px; } .uso-card dl > div { font-size: 12.5px; } .uso-card dd { font-size: 16px; } .uso-grafico { height: 150px; } }

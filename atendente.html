@@ -52,6 +52,10 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3.5v-11L6 8H3z"/><path d="M13 7.5a3.5 3.5 0 010 5M15.5 5a7 7 0 010 10"/></svg>
         Baixar voz mais natural
       </button>
+      <button class="side-link" id="btnUso" type="button">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17h14M5 14V9M9 14V5M13 14v-3M17 14V7"/></svg>
+        Uso do EntendAI
+      </button>
       <button class="side-link" id="btnAvaliacoes" type="button">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5"/></svg>
         Avaliações das respostas
@@ -129,6 +133,18 @@
     <div class="modal-body">
       <h2 id="dlgCompTitulo">Compartilhar conversa</h2>
       <div id="dlgCompCorpo"></div>
+    </div>
+  </dialog>
+
+  <!-- Uso do EntendAI (relatório simples) -->
+  <dialog class="modal modal-aval" id="dlgUso" aria-labelledby="dlgUsoTitulo">
+    <div class="modal-body">
+      <h2 id="dlgUsoTitulo">Uso do EntendAI</h2>
+      <p class="modal-text uso-nota">Chat público. Cada &ldquo;pessoa&rdquo; é um aparelho ou navegador diferente. Só números, sem o conteúdo das conversas.</p>
+      <div id="usoCards" class="uso-cards"></div>
+      <h3 class="uso-sub">Perguntas por dia (últimos 14 dias)</h3>
+      <div id="usoGrafico" class="uso-grafico" role="img" aria-label="Perguntas por dia"></div>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" id="btnUsoFechar">Fechar</button></div>
     </div>
   </dialog>
 
