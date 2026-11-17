@@ -43,6 +43,36 @@
   aplicarNivel();
 
   // =====================================================================
+  // 1b) Tema claro / escuro (a escolha fica guardada; o padrão é o claro)
+  // =====================================================================
+  const btnTema = $("btnTema");
+  const ICO_LUA = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 11.5A6.5 6.5 0 018.5 3.5a6.5 6.5 0 108 8z"/></svg>';
+  const ICO_SOL = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/></svg>';
+  function aplicarTema(t) {
+    const escuro = t === "escuro";
+    document.documentElement.setAttribute("data-tema", escuro ? "escuro" : "claro");
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", escuro ? "#080e1d" : "#ffffff");   // cor da barra do navegador no celular
+    if (btnTema) {
+      const txt = escuro ? "Mudar para o tema claro" : "Mudar para o tema escuro";
+      btnTema.innerHTML = (escuro ? ICO_SOL : ICO_LUA) + `<span class="tema-txt">${escuro ? "Tema claro" : "Tema escuro"}</span>`;
+      btnTema.setAttribute("aria-label", txt);
+      btnTema.setAttribute("aria-pressed", escuro ? "true" : "false");
+      btnTema.title = txt;
+    }
+    // As logos têm texto azul-escuro: no tema escuro usa-se a versão clareada (também sem fundo)
+    document.querySelectorAll("img[data-escuro]").forEach((img) => {
+      if (!img.dataset.claro) img.dataset.claro = img.getAttribute("src");
+      img.setAttribute("src", escuro ? img.dataset.escuro : img.dataset.claro);
+      img.setAttribute("data-trocada", "1");
+    });
+    guardar("tema", escuro ? "escuro" : "claro");
+  }
+  let tema = ler("tema") === "escuro" ? "escuro" : "claro";
+  aplicarTema(tema);
+  if (btnTema) btnTema.onclick = () => { tema = tema === "escuro" ? "claro" : "escuro"; aplicarTema(tema); };
+
+  // =====================================================================
   // 2) Ouvir a resposta: voz neural LOCAL (Piper, grátis, roda no aparelho) com reserva na voz do navegador
   // =====================================================================
   const temVozNavegador = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;

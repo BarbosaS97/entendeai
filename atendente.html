@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff">
   <title>EntendAI – Atendimento</title>
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-64.png">
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-  <script>try{var n=+localStorage.getItem('nivelTexto')||0;document.documentElement.style.setProperty('--zoom',[1,1.12,1.25,1.4][n]||1)}catch(e){}</script>
+  <script>try{var n=+localStorage.getItem('nivelTexto')||0;document.documentElement.style.setProperty('--zoom',[1,1.12,1.25,1.4][n]||1)}catch(e){}try{document.documentElement.setAttribute('data-tema',localStorage.getItem('tema')==='escuro'?'escuro':'claro')}catch(e){}</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-modo="atendente">
@@ -20,7 +20,7 @@
   <!-- Login do atendente: a senha é validada no servidor (Edge Function), nunca aqui -->
   <section class="login" id="login">
     <form class="login-card" id="formLogin" autocomplete="off">
-      <div class="login-logos"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
+      <div class="login-logos"><img class="logo-banner" src="img/logo.webp" data-escuro="img/escuro/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
       <p class="eyebrow">Área do atendimento</p>
       <p class="modal-text">Acesso restrito à equipe. Informe seu nome e a senha do setor.</p>
       <label class="field">
@@ -38,11 +38,10 @@
 
   <div class="app" id="app" hidden>
     <aside class="sidebar" id="sidebar" aria-label="Conversas">
-      <button type="button" class="side-fechar" id="btnFecharMenu" aria-label="Fechar o histórico de conversas">
-        <span>Fechar</span>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      <button type="button" class="side-fechar" id="btnFecharMenu" aria-label="Fechar o histórico de conversas" title="Fechar">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
       </button>
-      <div class="brand"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"><em class="brand-tag">Atendimento</em></div>
+      <div class="brand"><img class="logo-banner" src="img/logo.webp" data-escuro="img/escuro/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"><em class="brand-tag">Atendimento</em></div>
       <button class="btn-new" id="btnNew">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
         Nova conversa
@@ -71,10 +70,10 @@
           <svg class="menu-seta" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5l5 5-5 5"/></svg>
         </button>
         <h1 class="topbar-title" id="topTitle"></h1>
-        <img class="top-logo" src="img/logo-nome.webp" alt="EntendAI" width="2019" height="338">
+        <img class="top-logo" src="img/logo-nome.webp" data-escuro="img/escuro/logo-nome.webp" alt="EntendAI" width="2019" height="338">
         <div class="topbar-actions">
           <button type="button" class="btn btn-secondary btn-sm topbar-novo" id="btnNovoTopo" hidden title="Começar uma nova conversa"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>Nova conversa</span></button>
-          <div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div>
+          <button type="button" class="tema-btn" id="btnTema" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 11.5A6.5 6.5 0 018.5 3.5a6.5 6.5 0 108 8z"/></svg><span class="tema-txt">Tema escuro</span></button><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div>
           <button type="button" class="btn btn-secondary btn-sm" id="btnCompartilhar" hidden>
             <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="5" cy="10" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="15" cy="15" r="2"/><path d="M6.8 9l6.4-3M6.8 11l6.4 3"/></svg>
             Compartilhar conversa

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff">
   <title>EntendAI – Direito em linguagem simples</title>
   <meta name="description" content="Cole um texto ou envie um documento jurídico e receba uma explicação simples e clara.">
@@ -12,17 +12,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-  <script>try{var n=+localStorage.getItem('nivelTexto')||0;document.documentElement.style.setProperty('--zoom',[1,1.12,1.25,1.4][n]||1)}catch(e){}</script>
+  <script>try{var n=+localStorage.getItem('nivelTexto')||0;document.documentElement.style.setProperty('--zoom',[1,1.12,1.25,1.4][n]||1)}catch(e){}try{document.documentElement.setAttribute('data-tema',localStorage.getItem('tema')==='escuro'?'escuro':'claro')}catch(e){}</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="app" id="app">
     <aside class="sidebar" id="sidebar" aria-label="Conversas">
-      <button type="button" class="side-fechar" id="btnFecharMenu" aria-label="Fechar o histórico de conversas">
-        <span>Fechar</span>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      <button type="button" class="side-fechar" id="btnFecharMenu" aria-label="Fechar o histórico de conversas" title="Fechar">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
       </button>
-      <div class="brand"><img class="logo-banner" src="img/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
+      <div class="brand"><img class="logo-banner" src="img/logo.webp" data-escuro="img/escuro/logo.webp" alt="Justiça Federal – EntendAI" width="1455" height="656"></div>
       <button class="btn-new" id="btnNew">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
         Nova conversa
@@ -59,8 +58,8 @@
           <svg class="menu-seta" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5l5 5-5 5"/></svg>
         </button>
         <h1 class="topbar-title" id="topTitle"></h1>
-        <img class="top-logo" src="img/logo-nome.webp" alt="EntendAI" width="2019" height="338">
-        <div class="topbar-actions"><button type="button" class="btn btn-secondary btn-sm topbar-novo" id="btnNovoTopo" hidden title="Começar uma nova conversa"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>Nova conversa</span></button><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div></div>
+        <img class="top-logo" src="img/logo-nome.webp" data-escuro="img/escuro/logo-nome.webp" alt="EntendAI" width="2019" height="338">
+        <div class="topbar-actions"><button type="button" class="btn btn-secondary btn-sm topbar-novo" id="btnNovoTopo" hidden title="Começar uma nova conversa"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>Nova conversa</span></button><button type="button" class="tema-btn" id="btnTema" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 11.5A6.5 6.5 0 018.5 3.5a6.5 6.5 0 108 8z"/></svg><span class="tema-txt">Tema escuro</span></button><div class="tam-texto" role="group" aria-label="Tamanho das letras"><span class="tam-rotulo">Letras</span><button type="button" id="btnMenos" aria-label="Diminuir o tamanho das letras" title="Letras menores">A<span>&minus;</span></button><button type="button" id="btnMais" aria-label="Aumentar o tamanho das letras" title="Letras maiores">A<span>+</span></button></div></div>
       </header>
 
       <div id="banner" class="banner" hidden role="status"></div>
@@ -68,7 +67,7 @@
       <section class="chat" id="chat" aria-live="polite">
         <div class="welcome welcome-duas" id="welcome">
           <div class="welcome-topo">
-          <div class="welcome-logo"><img class="logo-banner" src="img/logo-jf-df.webp" alt="Justiça Federal – Distrito Federal" width="1677" height="571"></div>
+          <div class="welcome-logo"><img class="logo-banner" src="img/logo-jf-df.webp" data-escuro="img/escuro/logo-jf-df.webp" alt="Justiça Federal – Distrito Federal" width="1677" height="571"></div>
           <p class="eyebrow">Assistente de leitura jurídica</p>
           <h2>Entenda seu processo, sem complicação.</h2>
           <p class="lead">Envie seu documento ou escreva sua dúvida. Eu explico em linguagem simples.</p>
