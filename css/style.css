@@ -1340,3 +1340,35 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 
 /* as ondas das quinas nunca passam da largura da tela (ex.: letras no tamanho máximo) */
 .main::before, .main::after { max-width: 100%; }
+
+/* ===== Ajustes de refinamento (sugestões de revisão visual) ===== */
+/* 1) Em telas altas, o bloco de boas-vindas desce um pouco: menos vazio até a caixa de mensagem */
+@media (min-width: 801px) and (min-height: 700px) {
+  .chat > .welcome { position: relative; top: clamp(0px, 6vh, 64px); }
+}
+
+/* 2) Caixa de mensagem um pouco mais alta e botão de anexar mais evidente */
+.composer { min-height: 62px; align-items: center; }
+.composer textarea { padding-top: 13px; padding-bottom: 13px; }
+#btnAttach {
+  background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  border-radius: 999px; min-height: 44px; min-width: 44px; align-items: center; justify-content: center;
+}
+#btnAttach:hover { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); }
+#btnAttach .icon-label { color: var(--accent); font-weight: 600; }
+#btnAttach svg { stroke-width: 1.9; }
+@media (max-width: 800px) { .composer { min-height: 58px; } }
+
+/* 3) Dica: dá para começar só escrevendo uma pergunta (telas com espaço; no celular o espaço é curto) */
+.dica-digitar { display: none; }
+@media (min-width: 801px) and (min-height: 700px) {
+  .main:has(.welcome:not([hidden])) .dica-digitar {
+    display: block; max-width: 820px; margin: 0 auto 10px; text-align: center; font-size: 14px; color: var(--muted);
+  }
+  .dica-digitar strong { color: var(--text); font-weight: 600; }
+}
+
+/* 4) Contato institucional da tela inicial com menos destaque */
+.contato-inline { font-size: 12.5px; color: var(--muted); opacity: .9; }
+.contato-inline a { color: var(--muted); text-decoration-color: color-mix(in srgb, var(--muted) 45%, transparent); }
+.contato-inline a:hover { color: var(--accent); }
