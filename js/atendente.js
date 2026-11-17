@@ -245,4 +245,79 @@
   }
   $("btnUso").onclick = () => { abrirUso(); };
   $("btnUsoFechar").onclick = () => dlgUso.close();
+
+  // ---------- mensagem padrão para o atendido (link + QR code) ----------
+  const dlgConv = $("dlgConvidar");
+  const linkSistema = () => new URL("./", location.href).href;     // página do atendido (raiz do site)
+  const msgPadrao = (link) =>
+    "Olá! Aqui é do atendimento da Justiça Federal no Distrito Federal.\n\n" +
+    "Para ajudar você a entender os documentos do seu processo em linguagem simples, use o EntendAI:\n" +
+    link + "\n\n" +
+    "Você pode abrir o link ou ler o QR code com a câmera do celular. Lá, é só enviar uma foto, um PDF ou o texto do documento que o sistema explica.\n\n" +
+    "Se eu passar um código de 4 números, toque em \"Digitar o código\" para abrir a conversa que preparei para você.\n\n" +
+    "O EntendAI é informativo e não substitui a orientação de advogado(a) ou da Defensoria Pública.\n\n" +
+    "Dúvidas: (61) 3221-6600 ou (61) 3221-6601 · seate.df@trf1.jus.br";
+  let avisoTimer = null;
+  function avisoConv(t) {
+    const el = $("convAviso");
+    el.textContent = t;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(() => { el.textContent = ""; }, 4000);
+  }
+  async function copiarTexto(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch {}
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch {}
+    ta.remove();
+    return ok;
+  }
+  // Desenha o QR code (com margem branca) no canvas
+  function desenharQr(link) {
+    const cv = $("convQr"), ctx = cv.getContext("2d");
+    const qr = qrcode(0, "M");
+    qr.addData(link);
+    qr.make();
+    const n = qr.getModuleCount(), margem = 4, tam = cv.width, passo = tam / (n + margem * 2);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, tam, tam);
+    ctx.fillStyle = "#000";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect(Math.floor((c + margem) * passo), Math.floor((r + margem) * passo), Math.ceil(passo), Math.ceil(passo));
+    }
+  }
+  const qrBlob = () => new Promise((res) => $("convQr").toBlob(res, "image/png"));
+  function abrirConvidar() {
+    const link = linkSistema();
+    $("convLink").textContent = link;
+    $("convMsg").value = msgPadrao(link);
+    $("convAviso").textContent = "";
+    try { desenharQr(link); } catch (e) { console.error(e); }
+    dlgConv.showModal();
+  }
+  $("btnConvidar").onclick = abrirConvidar;
+  $("btnConvFechar").onclick = () => dlgConv.close();
+  $("btnCopiarMsg").onclick = async () => avisoConv((await copiarTexto($("convMsg").value)) ? "Mensagem copiada. Agora é só colar no e-mail ou no WhatsApp." : "Não foi possível copiar. Selecione o texto e copie manualmente.");
+  $("btnCopiarLink").onclick = async () => avisoConv((await copiarTexto(linkSistema())) ? "Link copiado." : "Não foi possível copiar o link.");
+  $("btnCopiarQr").onclick = async () => {
+    try {
+      const blob = await qrBlob();
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      avisoConv("QR code copiado. Cole na conversa ou no e-mail.");
+    } catch {
+      avisoConv("Seu navegador não permite copiar a imagem. Use \"Baixar imagem\" e anexe o arquivo.");
+    }
+  };
+  $("btnBaixarQr").onclick = async () => {
+    const blob = await qrBlob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "qrcode-entendai.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $("btnConvWhats").onclick = () => window.open("https://wa.me/?text=" + encodeURIComponent($("convMsg").value), "_blank", "noopener");
+  $("btnConvEmail").onclick = () => {
+    location.href = "mailto:?subject=" + encodeURIComponent("Acesso ao EntendAI - Justiça Federal no DF") + "&body=" + encodeURIComponent($("convMsg").value);
+  };
 })();

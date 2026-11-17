@@ -1252,3 +1252,21 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
 .uso-val { font-size: 11px; color: var(--muted); }
 .uso-dia { font-size: 10px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 420px) { .uso-dia { font-size: 9px; writing-mode: vertical-rl; transform: rotate(180deg); } .uso-card { padding: 8px 10px; } .uso-card dl > div { font-size: 12.5px; } .uso-card dd { font-size: 16px; } .uso-grafico { height: 150px; } }
+
+/* Mensagem para o atendido (área do atendente) */
+.conv-grade { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: start; }
+.conv-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.conv-qr canvas { width: 200px; height: 200px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.conv-texto textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 200px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: 14.5px; line-height: 1.45; }
+.conv-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+.conv-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.conv-acoes { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .conv-grade { grid-template-columns: minmax(0, 1fr); }
+  .conv-qr canvas { width: 180px; height: 180px; }
+  .conv-acoes > .btn { flex: 1 1 calc(50% - 8px); }
+}
+.conv-grade > *, .modal-aval .modal-body { min-width: 0; }
+.modal-aval .modal-body { overflow-x: hidden; }
+.conv-texto { width: 100%; }
+@media (max-width: 560px) { .conv-texto textarea { min-height: 170px; } .conv-link { flex-wrap: wrap; } }
