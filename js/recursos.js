@@ -72,6 +72,21 @@
   aplicarTema(tema);
   if (btnTema) btnTema.onclick = () => { tema = tema === "escuro" ? "claro" : "escuro"; aplicarTema(tema); };
 
+  // No celular, tema e tamanho das letras saem do topo e vão para dentro do menu (topo mais limpo)
+  (function () {
+    const destino = $("sideOpcoes"), origem = document.querySelector(".topbar-actions");
+    const itens = [$("btnTema"), grupoTam].filter(Boolean);
+    if (!destino || !origem || !itens.length || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 800px)");
+    const posicionar = () => {
+      if (mq.matches) { itens.forEach((el) => destino.appendChild(el)); }
+      else { itens.forEach((el) => origem.appendChild(el)); }
+      destino.hidden = !mq.matches;
+    };
+    posicionar();
+    (mq.addEventListener ? mq.addEventListener("change", posicionar) : mq.addListener(posicionar));
+  })();
+
   // =====================================================================
   // 2) Ouvir a resposta: voz neural LOCAL (Piper, grátis, roda no aparelho) com reserva na voz do navegador
   // =====================================================================

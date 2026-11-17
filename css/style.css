@@ -1185,3 +1185,21 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
           mask: var(--cap) left top / 240px 100% no-repeat, linear-gradient(#000, #000) 239px 0 / calc(100% - 239px) 100% no-repeat;
 }
 @media (max-width: 800px) { .topbar::before { height: calc(100% + 6px); } }
+
+/* Barra de separação + "Justiça Federal / Distrito Federal" ao lado do logo do topo */
+.top-jf { display: none; }
+@media (min-width: 440px) {
+  .top-jf { display: block; height: 26px; width: auto; flex: 0 0 auto; margin-left: 4px; }
+  .topbar-title:not(:empty) + .top-logo + .top-jf, .zoom-alto .top-jf { display: none; }
+}
+@media (max-width: 700px) { .top-jf { height: 22px; } }
+
+/* Opções de aparência dentro do menu (celular) */
+.side-opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 4px; margin: 4px 0; border-top: 1px solid var(--line); }
+.side-opcoes[hidden] { display: none; }
+.side-opcoes-t { flex: 0 0 100%; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.side-opcoes .tema-btn, .side-opcoes .tam-texto { min-height: 44px; }
+.side-opcoes .tam-texto button { min-width: 44px; min-height: 40px; }
+@media (max-width: 800px) { .zoom-alto .top-jf { display: none; } }
+.side-opcoes .tema-btn .tema-txt { display: inline; }
+.side-opcoes .tema-btn { padding: 0 14px; gap: 8px; }
