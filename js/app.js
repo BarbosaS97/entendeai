@@ -157,13 +157,65 @@
     return wrap;
   }
 
+  // ---------- verificação anti-robô (Cloudflare Turnstile) ----------
+  // Só é pedida ao criar uma sessão nova; quase sempre é automática, sem a pessoa precisar fazer nada.
+  let _turnstile = null;
+  function carregarTurnstile() {
+    if (!_turnstile) {
+      _turnstile = new Promise((ok, falha) => {
+        if (window.turnstile) return ok();
+        const sc = document.createElement("script");
+        sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        sc.async = true;
+        sc.onload = () => ok();
+        sc.onerror = () => { _turnstile = null; falha(new Error("turnstile")); };
+        document.head.appendChild(sc);
+      });
+    }
+    return _turnstile;
+  }
+  async function obterTokenCaptcha() {
+    const chave = (window.ENTENDE_CONFIG || {}).TURNSTILE_SITE_KEY;
+    if (!chave) return undefined;
+    await carregarTurnstile();
+    return new Promise((ok, falha) => {
+      const caixa = document.createElement("div");
+      caixa.setAttribute("aria-live", "polite");
+      caixa.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:200";
+      document.body.appendChild(caixa);
+      let id = null, fim = false;
+      const encerrar = (fn, v) => {
+        if (fim) return; fim = true; clearTimeout(t);
+        try { if (id !== null) window.turnstile.remove(id); } catch {}
+        caixa.remove(); fn(v);
+      };
+      const t = setTimeout(() => encerrar(falha, new Error("tempo")), 25000);
+      try {
+        id = window.turnstile.render(caixa, {
+          sitekey: chave,
+          appearance: "interaction-only",      // só aparece se precisar de um clique
+          language: "pt-br",
+          callback: (token) => encerrar(ok, token),
+          "error-callback": () => encerrar(falha, new Error("captcha")),
+          "timeout-callback": () => encerrar(falha, new Error("tempo")),
+        });
+      } catch (e) { encerrar(falha, e); }
+    });
+  }
+
   // ---------- auth ----------
   async function initAuth() {
     let { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      const { data, error } = await sb.auth.signInAnonymously();
+      let captchaToken;
+      try { captchaToken = await obterTokenCaptcha(); }
+      catch {
+        showBanner("Não foi possível confirmar que você não é um robô. Verifique sua internet e atualize a página.");
+        throw new Error("captcha");
+      }
+      const { data, error } = await sb.auth.signInAnonymously(captchaToken ? { options: { captchaToken } } : undefined);
       if (error) {
-        showBanner("Não foi possível iniciar a sessão. Ative \"Anonymous sign-ins\" em Authentication no painel do Supabase. (" + error.message + ")");
+        showBanner("Não foi possível iniciar a sessão. Atualize a página e tente de novo. (" + error.message + ")");
         throw error;
       }
       session = data.session;
