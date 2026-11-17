@@ -620,12 +620,28 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
   // =====================================================================
   // 8) Montagem do que aparece embaixo de cada resposta
   // =====================================================================
-  const SEGUIR = [
-    ["Explicar mais simples", "Explique de novo de um jeito ainda mais simples, com frases bem curtas."],
-    ["Quais são os prazos?", "Quais são os prazos e datas importantes neste documento?"],
-    ["Palavras difíceis", "Explique as palavras difíceis que aparecem neste documento."],
-    ["O que vem agora?", "O que o documento indica que vai acontecer ou que precisa ser feito agora?"],
-  ];
+  const MAIS_SIMPLES = ["Explicar mais simples", "Explique de novo de um jeito ainda mais simples, com frases bem curtas."];
+  const semAcentoR = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  // Sugestões "plano B" (quando a IA não mandou as dela): só o que ainda NÃO está na resposta
+  function sugestoesPorConteudo(texto) {
+    const t = semAcentoR(texto);
+    const estruturada = /^#{1,3}\s/m.test(texto);
+    if (!estruturada && texto.length < 700) return [];            // resposta curta, recusa ou aviso: sem sugestões
+    const chips = [];
+    if (!/prazo/.test(t)) chips.push(["Tem algum prazo?", "Existe algum prazo ou data importante neste documento?"]);
+    if (!/palavras dificeis|glossario/.test(t)) chips.push(["Palavras difíceis", "Explique as palavras difíceis que aparecem neste documento."]);
+    if (!/proximos passos|o que fazer|o que o documento indica/.test(t)) chips.push(["O que vem agora?", "O que o documento indica que vai acontecer ou que precisa ser feito agora?"]);
+    return chips;
+  }
+  // Monta as sugestões da resposta: as da IA (sobre o conteúdo) ou o plano B; "mais simples" só em respostas longas
+  function montarSugestoes(texto, sugestoesIA) {
+    let chips = (sugestoesIA && sugestoesIA.length)
+      ? sugestoesIA.map((q) => { const p = q.endsWith("?") ? q : q + "?"; return [p, p]; })
+      : sugestoesPorConteudo(texto);
+    if (texto.length > 900 && chips.length) chips = [MAIS_SIMPLES, ...chips];
+    return chips.slice(0, 4);
+  }
   const LINHA_CONTATO =
     'Ficou com dúvida? Fale com o atendimento: <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">3221-6601</a> · <a href="mailto:seate.df@trf1.jus.br">seate.df@trf1.jus.br</a>';
 
@@ -634,7 +650,7 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
     try { await sb.from("avaliacoes").upsert({ mensagem_id: id, util }, { onConflict: "user_id,mensagem_id" }); } catch {}
   }
 
-  function decorar(wrap, texto, id) {
+  function decorar(wrap, texto, id, sugestoesIA = []) {
     // --- ações
     const acoes = document.createElement("div");
     acoes.className = "msg-actions";
@@ -657,21 +673,24 @@ Dúvidas? Atendimento da Justiça Federal no DF: (61) 3221-6600 · (61) 3221-660
 
     if (!publico) return;
 
-    // --- continuações (só aparecem na última resposta, via CSS)
-    const seguir = document.createElement("div");
-    seguir.className = "msg-seguir";
-    seguir.innerHTML = '<span class="msg-seguir-t">Quer continuar? Toque em uma opção:</span>';
-    const lista = document.createElement("div");
-    lista.className = "msg-seguir-lista";
-    SEGUIR.forEach(([rotulo, pergunta]) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = rotulo;
-      b.onclick = () => enviarTexto(pergunta);
-      lista.appendChild(b);
-    });
-    seguir.appendChild(lista);
-    wrap.appendChild(seguir);
+    // --- continuações no contexto desta resposta (só aparecem na última resposta, via CSS)
+    const chips = montarSugestoes(texto, sugestoesIA);
+    if (chips.length) {
+      const seguir = document.createElement("div");
+      seguir.className = "msg-seguir";
+      seguir.innerHTML = '<span class="msg-seguir-t">Você também pode perguntar:</span>';
+      const lista = document.createElement("div");
+      lista.className = "msg-seguir-lista";
+      chips.forEach(([rotulo, pergunta]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = rotulo;
+        b.onclick = () => enviarTexto(pergunta);
+        lista.appendChild(b);
+      });
+      seguir.appendChild(lista);
+      wrap.appendChild(seguir);
+    }
 
     // --- "Isso ajudou?"
     const av = document.createElement("div");

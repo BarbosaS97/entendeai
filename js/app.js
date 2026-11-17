@@ -288,6 +288,22 @@
       if (/nao (encontr|ha |existe|consta)/.test(semAcento(caixa.textContent))) caixa.classList.add("vazio");
     });
   }
+  // A IA termina a resposta com uma linha "[[SUGESTOES: a | b | c]]" (só para a tela): separa o texto das sugestões.
+  // Também esconde o começo desse marcador enquanto a resposta ainda está chegando.
+  const MARCADOR = "[[SUGESTOES";
+  function separarSugestoes(t) {
+    const i = t.indexOf(MARCADOR);
+    if (i >= 0) {
+      const m = t.slice(i).match(/\[\[SUGESTOES:?\s*([\s\S]*?)(?:\]\]|$)/);
+      const itens = m ? m[1].split("|").map((x) => x.replace(/\s+/g, " ").trim()).filter((x) => x.length >= 4 && x.length <= 90) : [];
+      return { texto: t.slice(0, i).trimEnd(), sugestoes: itens.slice(0, 4) };
+    }
+    for (let k = Math.min(MARCADOR.length, t.length); k >= 1; k--) {      // pedaço do marcador no fim do texto parcial
+      if (t.endsWith(MARCADOR.slice(0, k))) return { texto: t.slice(0, t.length - k).trimEnd(), sugestoes: [] };
+    }
+    return { texto: t, sugestoes: [] };
+  }
+
   // Renderiza o markdown da resposta já com os prazos em destaque
   function renderResposta(container, texto) {
     container.innerHTML = renderMd(texto);
@@ -296,9 +312,9 @@
 
   // Acrescenta abaixo da resposta: ações (ouvir, copiar, imprimir, WhatsApp), continuações, avaliação e contato.
   // A lógica fica em recursos.js; se ele não carregar, mantém só o botão Copiar.
-  function finalizarResposta(wrap, texto, id) {
+  function finalizarResposta(wrap, texto, id, sugestoes = []) {
     if (id) wrap.dataset.id = id;
-    if (window.EntendRecursos && window.EntendRecursos.decorar) window.EntendRecursos.decorar(wrap, texto, id);
+    if (window.EntendRecursos && window.EntendRecursos.decorar) window.EntendRecursos.decorar(wrap, texto, id, sugestoes);
     else wrap.appendChild(copyButton(() => texto));
   }
 
@@ -323,8 +339,9 @@
       wrap.innerHTML = html;
     } else {
       wrap.innerHTML = '<div class="bubble md"></div>';
-      renderResposta(wrap.firstChild, content);
-      finalizarResposta(wrap, content, id);
+      const r = separarSugestoes(content);
+      renderResposta(wrap.firstChild, r.texto);
+      finalizarResposta(wrap, r.texto, id, r.sugestoes);
     }
     el.messages.appendChild(wrap);
     return wrap;
@@ -874,7 +891,7 @@
           if (ev.t === "delta") {
             if (!full) timersEspera.forEach(clearTimeout);
             full += ev.text;
-            renderResposta(bubble, full);
+            renderResposta(bubble, separarSugestoes(full).texto);
             fixarInicio();
           } else if (ev.t === "done") {
             idResposta = ev.id || null;
@@ -893,7 +910,10 @@
       const idx = state.convs.findIndex((c) => c.id === convId);
       if (idx > 0) state.convs.unshift(...state.convs.splice(idx, 1));
       renderConvs();
-      if (full) finalizarResposta(assistantWrap, full, idResposta);
+      if (full) {
+        const r = separarSugestoes(full);
+        finalizarResposta(assistantWrap, r.texto, idResposta, r.sugestoes);
+      }
     } catch (err) {
       timersEspera.forEach(clearTimeout);
       if (assistantWrap) assistantWrap.remove();
