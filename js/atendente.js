@@ -331,6 +331,28 @@
   $("btnConvidar").onclick = abrirConvidar;
   $("btnConvFechar").onclick = () => dlgConv.close();
   $("btnCopiarMsg").onclick = async () => avisoConv((await copiarTexto($("convMsg").value)) ? "Mensagem copiada. Agora é só colar no e-mail ou no WhatsApp." : "Não foi possível copiar. Selecione o texto e copie manualmente.");
+  // Combo completo: texto + imagem do QR code na mesma cópia (e-mail e WhatsApp Web costumam colar os dois)
+  $("btnCopiarTudo").onclick = async () => {
+    const texto = $("convMsg").value;
+    const escHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const corpoHtml = escHtml(texto).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/\n/g, "<br>");
+    try {
+      const blob = await qrBlob();
+      const dataUrl = $("convQr").toDataURL("image/png");
+      const html = `<div>${corpoHtml}<br><br><img src="${dataUrl}" width="240" height="240" alt="QR code do EntendAI"></div>`;
+      await navigator.clipboard.write([new ClipboardItem({
+        "image/png": blob,
+        "text/plain": new Blob([texto], { type: "text/plain" }),
+        "text/html": new Blob([html], { type: "text/html" }),
+      })]);
+      avisoConv("Mensagem e QR code copiados. Cole no e-mail ou no WhatsApp.");
+    } catch {
+      const ok = await copiarTexto(texto);
+      avisoConv(ok
+        ? "Seu navegador não copia texto e imagem juntos. A mensagem foi copiada; use \"Copiar QR code\" para a imagem."
+        : "Não foi possível copiar. Selecione o texto e copie manualmente.");
+    }
+  };
   $("btnCopiarLink").onclick = async () => avisoConv((await copiarTexto(linkSistema())) ? "Link copiado." : "Não foi possível copiar o link.");
   $("btnCopiarQr").onclick = async () => {
     try {
