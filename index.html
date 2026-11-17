@@ -9,6 +9,12 @@
   <meta name="description" content="Cole um texto ou envie um documento jurídico e receba uma explicação simples e clara.">
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-64.png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="EntendAI">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="application-name" content="EntendAI">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
@@ -32,6 +38,10 @@
       </button>
       <nav class="conv-list" id="convList" aria-label="Histórico de conversas"></nav>
       <div class="side-extra" id="sideExtra">
+        <button class="side-link" id="btnInstalar" type="button" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9M6.5 9l3.5 3.5L13.5 9M4 15.5h12"/></svg>
+          Instalar aplicativo
+        </button>
       <div class="side-opcoes" id="sideOpcoes" hidden><span class="side-opcoes-t">Aparência</span></div>
       <button class="side-voz" id="btnVozMelhor" type="button" hidden>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8v4h3l4 3.5v-11L6 8H3z"/><path d="M13 7.5a3.5 3.5 0 010 5M15.5 5a7 7 0 010 10"/></svg>
@@ -157,6 +167,20 @@
     </form>
   </dialog>
 
+  <dialog class="modal" id="dlgInstalar" aria-labelledby="dlgInstalarTitulo">
+    <div class="modal-body">
+      <h2 id="dlgInstalarTitulo">Instalar o EntendAI</h2>
+      <p class="modal-text">Para ter o EntendAI como um aplicativo na tela inicial do seu celular:</p>
+      <ol class="instalar-passos">
+        <li>Toque no botão <strong>Compartilhar</strong> do navegador (o quadrado com uma seta para cima).</li>
+        <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
+        <li>Toque em <strong>Adicionar</strong>.</li>
+      </ol>
+      <p class="modal-note">Em outros navegadores, procure no menu a opção &ldquo;Instalar aplicativo&rdquo; ou &ldquo;Adicionar à tela inicial&rdquo;.</p>
+      <div class="modal-actions"><button type="button" class="btn btn-primary" id="btnInstalarFechar">Entendi</button></div>
+    </div>
+  </dialog>
+
   <dialog class="modal" id="dlgWhats" aria-labelledby="dlgWhatsTitulo">
     <div class="modal-body">
       <h2 id="dlgWhatsTitulo">Enviar por WhatsApp</h2>
@@ -262,6 +286,7 @@
   <script src="js/config.js"></script>
   <script src="js/app.js"></script>
   <script src="js/recursos.js"></script>
+  <script src="js/pwa.js"></script>
   <script src="js/codigo.js"></script>
 </body>
 </html>

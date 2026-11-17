@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="noindex">
+  <title>Sem conexão - EntendAI</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-64.png">
+  <style>
+    :root { color-scheme: light dark; --bg: #ffffff; --text: #0f1a33; --muted: #5a6682; --accent: #0a50c8; --line: #dfe5f0; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0b1226; --text: #eaf0ff; --muted: #95a2bf; --accent: #5b9dff; --line: #26324f; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 420px; text-align: center; }
+    img { width: 180px; max-width: 60%; height: auto; margin-bottom: 18px; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    p { margin: 0 0 14px; color: var(--muted); }
+    button { min-height: 48px; padding: 0 26px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; }
+    .contato { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; }
+    .contato a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="img/logo-nome.webp" alt="EntendAI" width="2019" height="338">
+    <h1>Você está sem internet</h1>
+    <p>O EntendAI precisa de conexão para explicar seus documentos. Conecte-se ao Wi-Fi ou aos dados do celular e tente de novo.</p>
+    <button type="button" onclick="location.reload()">Tentar de novo</button>
+    <p class="contato">Precisa falar com uma pessoa? Atendimento da Justiça Federal no DF:<br>
+      <a href="tel:+556132216600">(61) 3221-6600</a> · <a href="tel:+556132216601">(61) 3221-6601</a></p>
+  </main>
+  <script>window.addEventListener("online", () => location.reload());</script>
+</body>
+</html>

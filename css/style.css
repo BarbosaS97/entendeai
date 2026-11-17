@@ -1302,3 +1302,8 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .side-extra .contato-card { margin-top: 6px; }
   .conv-list { min-height: 120px; }
 }
+
+/* Instalar aplicativo (PWA) */
+#btnInstalar[hidden] { display: none; }
+.side-extra #btnInstalar { margin-bottom: 6px; }
+.instalar-passos { margin: 8px 0 12px; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.4; }
