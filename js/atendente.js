@@ -82,8 +82,8 @@
       <label class="field">
         <span>Validade do código</span>
         <select id="compValidade">
-          <option value="24">24 horas</option>
-          <option value="72" selected>3 dias</option>
+          <option value="24" selected>24 horas</option>
+          <option value="72">3 dias</option>
           <option value="168">7 dias</option>
         </select>
       </label>

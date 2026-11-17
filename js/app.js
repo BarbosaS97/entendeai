@@ -27,17 +27,20 @@
   const MAX_OCR_PAGES = 12;
 
   // ---------- bibliotecas pesadas: só carregam quando a pessoa anexa um arquivo ----------
+  // (com SRI: o navegador recusa o arquivo se o CDN entregar algo diferente do esperado)
   const LIBS = {
-    mammoth: "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js",
-    pdfjs: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-    tesseract: "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js",
+    mammoth: ["https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js", "sha384-/cXAMbzovUIKbBERjPmR3SnPTh8siWr5lsvFYj1Uq4XP0yaJUZJmsh0YXyGv5P0y"],
+    pdfjs: ["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", "sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e"],
+    tesseract: ["https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js", "sha384-1zP4ZOtlk2FXAOiUArpMuWf7INJJKe/ROfYFAVSeUa11DEfXdKWGiPI3dVma2Gt0"],
   };
   const _libs = {};
   function carregarLib(nome) {
     if (!_libs[nome]) {
       _libs[nome] = new Promise((ok, falha) => {
         const sc = document.createElement("script");
-        sc.src = LIBS[nome];
+        sc.src = LIBS[nome][0];
+        sc.integrity = LIBS[nome][1];
+        sc.crossOrigin = "anonymous";
         sc.onload = ok;
         sc.onerror = () => { delete _libs[nome]; falha(new Error("lib")); };
         document.head.appendChild(sc);
@@ -113,7 +116,19 @@
   const mimePorExtensao = (n) => MIMES[(n.split(".").pop() || "").toLowerCase()] || "application/octet-stream";
   const ext = (n) =>(n.split(".").pop() || "").toLowerCase();
   const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const renderMd = (text) => DOMPurify.sanitize(marked.parse(text, { breaks: true, gfm: true }));
+  // Markdown da IA/documentos: sem imagens, estilos nem formulários (imagem remota seria um jeito de vazar dados
+  // por injeção de instruções em documentos) e só links http(s)/mailto/tel, abertos sem acesso à página de origem.
+  if (window.DOMPurify && !window.__purifyHook) {
+    window.__purifyHook = true;
+    DOMPurify.addHook("afterSanitizeAttributes", (n) => {
+      if (n.tagName === "A") { n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener noreferrer nofollow"); }
+    });
+  }
+  const renderMd = (text) => DOMPurify.sanitize(marked.parse(text, { breaks: true, gfm: true }), {
+    FORBID_TAGS: ["img", "picture", "source", "video", "audio", "iframe", "object", "embed", "form", "input", "button", "style", "link", "meta", "base", "svg", "math"],
+    FORBID_ATTR: ["style", "srcset", "action", "formaction"],
+    ALLOWED_URI_REGEXP: /^(?:https?|mailto|tel):/i,
+  });
 
   function showBanner(msg, isError = true) {
     el.banner.textContent = msg;

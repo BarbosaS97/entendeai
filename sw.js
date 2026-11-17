@@ -3,7 +3,7 @@
 // - Imagens: usa a cópia guardada e atualiza em segundo plano.
 // - NUNCA mexe em chamadas de dados (Supabase, funções, IA): essas sempre vão direto para a rede.
 // Para forçar a atualização do cache, aumente a VERSAO.
-const VERSAO = "entendai-v1";
+const VERSAO = "entendai-v2";
 const CACHE = VERSAO;
 
 const PRE_CACHE = [
@@ -20,6 +20,7 @@ const PRE_CACHE = [
   "js/codigo.js",
   "js/atendente.js",
   "js/pwa.js",
+  "js/offline.js",
   "vendor/qrcode.min.js",
   "img/logo.webp",
   "img/logo-nome.webp",
