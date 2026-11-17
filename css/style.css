@@ -1174,3 +1174,14 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .zoom-alto .topbar-actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
   .zoom-alto .top-logo { display: none; }
 }
+
+/* Topo moderno: faixa de cor uniforme; só o canto esquerdo faz uma curva suave (a faixa "desce" do canto até a altura cheia) */
+.topbar { position: relative; border-bottom: 0; background: transparent; isolation: isolate; }
+.topbar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(100% + 10px); z-index: -1; pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  --cap: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 100' preserveAspectRatio='none'%3E%3Cpath d='M0 0H240V100C130 100 60 88 0 28Z'/%3E%3C/svg%3E");
+  -webkit-mask: var(--cap) left top / 240px 100% no-repeat, linear-gradient(#000, #000) 239px 0 / calc(100% - 239px) 100% no-repeat;
+          mask: var(--cap) left top / 240px 100% no-repeat, linear-gradient(#000, #000) 239px 0 / calc(100% - 239px) 100% no-repeat;
+}
+@media (max-width: 800px) { .topbar::before { height: calc(100% + 6px); } }
