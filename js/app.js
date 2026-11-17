@@ -963,10 +963,26 @@
   // O menu (histórico) SEMPRE começa fechado; abre só quando a pessoa pedir
   el.app.classList.add("side-collapsed");
   el.btnMenu.onclick = () => {
-    if (isMobile()) el.app.classList.toggle("menu-open");
-    else el.app.classList.toggle("side-collapsed");
+    if (isMobile()) {
+      const abriu = el.app.classList.toggle("menu-open");
+      atualizarMenu();
+      if (abriu) setTimeout(() => { const f = $("btnFecharMenu"); if (f) f.focus({ preventScroll: true }); }, 60);   // foco no "Fechar" ao abrir
+      return;
+    }
+    el.app.classList.toggle("side-collapsed");
     atualizarMenu();
   };
+  // Botão "Fechar" dentro do menu (celular) e gesto de arrastar para a esquerda
+  const btnFechar = $("btnFecharMenu");
+  if (btnFechar) btnFechar.onclick = () => { closeMenu(); el.btnMenu.focus({ preventScroll: true }); };
+  let toqueX = null, toqueY = null;
+  $("sidebar").addEventListener("touchstart", (e) => { const t = e.changedTouches[0]; toqueX = t.clientX; toqueY = t.clientY; }, { passive: true });
+  $("sidebar").addEventListener("touchend", (e) => {
+    if (toqueX === null) return;
+    const t = e.changedTouches[0], dx = t.clientX - toqueX, dy = t.clientY - toqueY;
+    toqueX = null;
+    if (dx < -60 && Math.abs(dy) < Math.abs(dx) * 0.6) closeMenu();        // arrastou para a esquerda: fecha
+  }, { passive: true });
   atualizarMenu();
   window.matchMedia("(max-width: 800px)").addEventListener("change", () => { el.app.classList.remove("menu-open"); atualizarMenu(); });
   // "Nova conversa" também no topo (aparece quando há uma conversa aberta)

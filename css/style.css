@@ -1109,3 +1109,17 @@ body.somente-leitura .msg-seguir, body.somente-leitura .msg-avalia { display: no
   .topbar-novo { min-width: 40px; min-height: 40px; }
 }
 .file-info small { white-space: nowrap; }
+
+/* Botão "Fechar" no topo do menu (aparece só no celular, onde o menu é uma gaveta) */
+.side-fechar { display: none; }
+@media (max-width: 800px) {
+  .side-fechar {
+    display: inline-flex; align-items: center; gap: 8px; align-self: flex-end; margin: 0 0 10px; min-height: 42px; padding: 8px 14px 8px 16px;
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+    font: inherit; font-size: 14.5px; font-weight: 500;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .side-fechar svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; flex: none; }
+  .side-fechar:hover, .side-fechar:active { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent); }
+  .sidebar .brand { padding-top: 0; }
+}
